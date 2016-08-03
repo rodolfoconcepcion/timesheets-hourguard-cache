@@ -1,11 +1,5 @@
 /csp/samples/hg
-ClassExplorer.pkg
-ClassVis.mac
-Common.GraphViz.cls
-Common.pkg
 Excel.pkg
-Exceptions.inc
 HourGuard.Controller.cls
 HourGuard.pkg
 JSON.pkg
-SourceControl.pkg
