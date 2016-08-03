@@ -1,0 +1,539 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="HourGuard.Controller">
+<Super>%RegisteredObject</Super>
+<TimeCreated>63942,59220.820648</TimeCreated>
+
+<Parameter name="NTUSERID">
+<Description>
+NT user id</Description>
+<Default>con115</Default>
+</Parameter>
+
+<Parameter name="PATH">
+<Description>
+Path where HG data is installed
+i.e. Parameter PATH = "C:\Users\con115\App Data\Roaming\NCH Software\HourGuard\";</Description>
+<Expression>"C:\Documents and Settings\"_..#NTUSERID_"\Application Data\NCH Software\HourGuard\"</Expression>
+</Parameter>
+
+<Parameter name="PATHOUT">
+<Description>
+\\prod-am.ameritrade.com\userhome\con115\Desktop\Timesheets
+Path where Timesheets will be exported as CSV files</Description>
+<Expression>"C:\Timesheets"</Expression>
+</Parameter>
+
+<Parameter name="HGDELIMITER">
+<Description>
+Delimiter of the  HG's .dat files</Description>
+<Default><![CDATA[&]]></Default>
+</Parameter>
+
+<Parameter name="DELIMITER">
+<Description>
+Delimiter for output</Description>
+<Default>,</Default>
+</Parameter>
+
+<Method name="main">
+<Description>
+Loads data from HourGuard's files</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[weekNumber:%Integer=0,date:%Date=+$horolog,DEBUG:%Boolean=1,&longFileName:%String="",&outputFile:HourGuard.Excel="",excelFormat:%String="csv"]]></FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	set cspDEBUG = +$get(^CacheTemp("debug"))
+	set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"main-1")=$listbuild("weekNumber="_weekNumber,"date="_date,"DEBUG="_DEBUG,"longFileName="_longFileName,"excelFormat="_excelFormat)
+	set sc = $System.Status.OK()
+	try {
+		&sql(delete from hourguard.account)
+		&sql(delete from hourguard.task)
+		&sql(delete from hourguard.timesheet)
+		//&sql(delete from hourguard.weeklyTimesheet)
+		$$$THROWONERROR(statusCode, ..uploadAccounts(.aAccounts, DEBUG))
+		$$$THROWONERROR(statusCode, ..uploadTasks(.aAccounts, DEBUG))
+		$$$THROWONERROR(statusCode, ..uploadTimesheets(DEBUG))
+		
+		set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"main-2")=$listbuild("date="_date,"excelFormat="_excelFormat)
+		$$$THROWONERROR(statusCode, ..generateTimeSheet(weekNumber, date, excelFormat, .longFileName, .outputFile, DEBUG))
+		set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"main-3")=$listbuild("longFileName="_longFileName,"outputFile="_outputFile)
+	} catch exception {
+		set sc = exception.AsStatus()
+		write:DEBUG !!,$system.Status.GetErrorText(sc),!
+	}
+	set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"main-4")=$listbuild("weekNumber="_weekNumber,"date="_date,"DEBUG="_DEBUG,"longFileName="_longFileName,"excelFormat="_excelFormat)
+	quit sc
+]]></Implementation>
+</Method>
+
+<Method name="uploadAccounts">
+<Description>
+uploads accounts</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&aAccounts:%Binary,DEBUG:%Boolean=0]]></FormalSpec>
+<PublicList>HourlyRate</PublicList>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	try {
+		kill aAccounts
+		write:DEBUG !,">>> Processing accounts..."
+		set rsFileSet=##class(%ResultSet).%New("%File:FileSet")
+		$$$THROWONERROR(statusCode, rsFileSet.Execute(..#PATH_"Accounts"))
+
+		set (counter,hdrPrinted)=0
+		while rsFileSet.Next(.sc) {
+			if 'sc quit
+			if $increment(counter)
+			if DEBUG&&'hdrPrinted {
+				set hdrPrinted=1
+				write !,?4 set cols=rsFileSet.GetColumnCount() for i=2:1:cols { write rsFileSet.GetColumnHeader(i),..#DELIMITER }		// print header
+			}
+			if rsFileSet.Data("Type")="D" continue						// skip directories
+			if DEBUG write !,?4 for i=2:1:cols { write rsFileSet.GetData(i),..#DELIMITER }	// print details
+
+			set fileName=rsFileSet.Data("Name")							// file name with full path, ie: C:\Documents and Settings\con115\Application Data\NCH Software\HourGuard\Accounts\TDA.dat
+			set HourlyRate=""												// initialize variables
+			do ..extractFields(fileName)									// create a variable for every field found
+
+			set Name=$piece(rsFileSet.Data("ItemName"),".")					// account name, ie: TDA
+			set objId=##class(HourGuard.Account).exists(Name)				// returns ID of account name
+			if 'objId {													// if account doesnt exist in Account class, create a new one
+				set action="added"
+				set obj=##class(HourGuard.Account).%New()
+				set obj.Name=Name
+				set obj.HourlyRate=HourlyRate
+			} else {
+				set action="no update"
+				set obj=##class(HourGuard.Account).%OpenId(objId,,.sc)
+				throw:('sc) ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+				set:(HourlyRate'="")&&(HourlyRate '= obj.HourlyRate) obj.HourlyRate=HourlyRate, action="updated"
+			}
+			if action'="no update" {
+				set sc=obj.%Save()
+				throw:('sc) ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+				set:'objId objId=obj.%Id()
+			}
+			set aAccounts(Name)=objId
+			if DEBUG write " --> ",action
+			kill obj
+		}
+	} catch e {
+		write:DEBUG !,">>> ",e.DisplayString()
+		set sc=e.AsStatus()
+	}
+	write:DEBUG !,">>> ",counter," account(s) processed."
+	quit sc
+]]></Implementation>
+</Method>
+
+<Method name="uploadTasks">
+<Description>
+uploads tasks</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&aAccounts:%Binary,DEBUG:%String=0]]></FormalSpec>
+<PublicList>ParentTask,Account,Name,FullName,Complete,Closed,UseAccountHourlyRate,HourlyRate,Notes</PublicList>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	write:DEBUG !!,">>> Processing tasks..."
+	set sc=$$$OK
+	set rsFileSet=##class(%ResultSet).%New("%File:FileSet")
+	set sc=rsFileSet.Execute(..#PATH_"Tasks")
+	throw:'sc ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+	set (counter,hdrPrinted)=0
+	while rsFileSet.Next(.sc) {
+		if 'sc quit
+		if $increment(counter)
+		if DEBUG&&'hdrPrinted {
+			set hdrPrinted=1
+			write !,?4 set cols=rsFileSet.GetColumnCount() for i=2:1:cols { write rsFileSet.GetColumnHeader(i),..#DELIMITER }		// print header
+		}
+		if rsFileSet.Data("Type")="D" continue						// skip directories
+		if DEBUG write !,?4 for i=2:1:cols { write rsFileSet.GetData(i),..#DELIMITER }	// print details
+		set fileName=rsFileSet.Data("Name")							// file name with full path, ie: C:\Documents and Settings\con115\Application Data\NCH Software\HourGuard\Tasks\TDA.dat
+
+		set (ParentTask,Account,Name,FullName,Complete,Closed,UseAccountHourlyRate,HourlyRate,Notes)=""	// initialize variables
+		do ..extractFields(fileName)									// create a variable for every field found
+		continue:(Account="")
+
+		set oAccount=##class(HourGuard.Account).%OpenId(aAccounts(Account),,.sc)
+		throw:'sc ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+
+		set TaskId=$piece(rsFileSet.Data("ItemName"),".")				// task name, ie: 1.dat = 1
+		set objId=##class(HourGuard.Task).exists(TaskId)			// returns objId of task id
+		if 'objId {												// if task doesnt exist in task class, create a new one
+			set action="added"
+			set obj=##class(HourGuard.Task).%New()
+			set obj.ParentTask=ParentTask
+			set obj.TaskId=TaskId
+			set obj.Account=oAccount
+			set obj.Name=Name
+			set obj.FullName=FullName
+			set obj.Complete=Complete
+			set obj.Closed=Closed
+			set obj.UseAccountHourlyRate=UseAccountHourlyRate
+			set obj.HourlyRate=HourlyRate
+		} else {
+			set action="no update"
+			set obj=##class(HourGuard.Task).%OpenId(objId,,.sc)
+			throw:'sc ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+			set:(ParentTask'="")&&(ParentTask '= obj.ParentTask) obj.ParentTask=ParentTask, action="updated"
+			set:(Name'="")&&(Name '= obj.Name) obj.Name=Name, action="updated"
+			set:(FullName'="")&&(FullName '= obj.FullName) obj.FullName=FullName, action="updated"
+			set:(Complete'="")&&(Complete '= obj.Complete) obj.Complete=Complete, action="updated"
+			set:(Closed'="")&&(Closed '= obj.Closed) obj.Closed=Closed, action="updated"
+			set:(UseAccountHourlyRate'="")&&(UseAccountHourlyRate '= obj.UseAccountHourlyRate) obj.UseAccountHourlyRate=UseAccountHourlyRate, action="updated"
+			set:(HourlyRate'="")&&(HourlyRate '= obj.HourlyRate) obj.HourlyRate=HourlyRate, action="updated"
+		}
+		set sc=obj.%Save()
+		throw:'sc ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+		if DEBUG write " --> ",action
+		kill obj
+	}
+exit3
+	write:DEBUG !,">>> ",counter," task(s) processed."
+	quit sc
+]]></Implementation>
+</Method>
+
+<Method name="uploadTimesheets">
+<Description>
+uploads timesheets</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>DEBUG:%String=0</FormalSpec>
+<PublicList>col1,col2,col3,col4,col5</PublicList>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	write:DEBUG !!,">>> Processing timesheets..."
+	set sc=$$$OK
+	set rsFileSet=##class(%ResultSet).%New("%File:FileSet")
+	set sc=rsFileSet.Execute(..#PATH_"Timesheets\"_..#NTUSERID)
+	throw:'sc ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+	
+	set (counter,hdrPrinted)=0
+	while rsFileSet.Next(.sc) {
+		if 'sc quit
+		if $increment(counter)
+		if DEBUG&&'hdrPrinted {
+			set hdrPrinted=1
+			write !,?4 set cols=rsFileSet.GetColumnCount() for i=2:1:cols { write rsFileSet.GetColumnHeader(i),..#DELIMITER }		// print header
+		}
+		if rsFileSet.Data("Type")="D" continue						// skip directories
+		if DEBUG write !,?4 for i=2:1:cols { write rsFileSet.GetData(i),..#DELIMITER }	// print details
+		set fileName=rsFileSet.Data("Name")							// file name with full path, ie: C:\Documents and Settings\con115\Application Data\NCH Software\HourGuard\Timesheets\con115\2009-10-26.csv
+
+		set (col1,col2,col3,col4,col5)=""								// initialize variables
+		do ..extractFields(fileName, ..#DELIMITER, .dataArray)					// create a variable for every field found (CSV file) and store all the csv records in a data array
+		
+		set recordNum = ""
+		for {
+			set recordNum = $order(dataArray(recordNum),1,data)
+			quit:(recordNum="")
+
+			set (col1,col2,col3,col4,col5)=""								// initialize variables
+			set fields = $listlength(data)
+			for fieldCounter = 1:1:fields {
+				set nameValuePair = $listget(data, fieldCounter)
+				set fieldName = $listget(nameValuePair, 1)
+				set fieldValue = $listget(nameValuePair, 2)
+				set @fieldName = fieldValue
+			}
+			
+			set TaskId=col3
+			continue:(TaskId="")										// col3 = Task Id
+
+			set objId=##class(HourGuard.Task).exists(TaskId)				// returns objId of task id
+			set oTask=##class(HourGuard.Task).%OpenId(objId,,.sc)
+			throw:'sc ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+
+			set tsDate=$piece(rsFileSet.Data("ItemName"),".")					// timesheet date, ie: 2009-10-30.csv
+			set tsDate=$zdateh(tsDate,3,,,,,,,0)								// YYYY-MM-DD --> $H
+			if 'tsDate {
+				set sc=$system.Status.Error(5001,"Invalid timesheet date")
+				throw ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+			}
+			set tsTime=$ztimeh(col4,,"0")										// timesheet time, ie: 12:50:00
+			set Duration=col5
+
+			set objId=##class(HourGuard.Timesheet).exists(tsDate,tsTime,Duration,..#NTUSERID)			// returns objId of timesheet	
+			if 'objId {													// if task doesnt exist in task class, create a new one
+				set action="added"
+				set obj=##class(HourGuard.Timesheet).%New()
+				set obj.tsDate=tsDate
+				set obj.tsTime=tsTime
+				set obj.Task=oTask
+				set obj.Duration=Duration
+			} else {
+				set action="no update"
+				set obj=##class(HourGuard.Timesheet).%OpenId(objId,,.sc)
+				throw:'sc ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+				
+				set:(tsDate'="")&&(tsDate '= obj.tsDate) obj.tsDate=tsDate, action="updated"
+				set:(TaskId'=obj.Task.TaskId) obj.Task=oTask, action="updated"
+				set:(tsTime'="")&&(tsTime '= obj.tsTime) obj.tsTime=tsTime, action="updated"
+				set:(Duration'="")&&(Duration '= obj.Duration) obj.Duration=Duration, action="updated"
+			}
+			set sc=obj.%Save()
+			throw:'sc ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+			
+			if DEBUG write " --> ",action
+			kill obj
+		}
+	}
+exit4
+	write:DEBUG !,">>> ",counter," timesheet(s) processed."
+	quit sc
+]]></Implementation>
+</Method>
+
+<Method name="extractFields">
+<Description>
+extract fields from the .dat files</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[fileName:%String="",HGDELIMITER:%String=..#HGDELIMITER,&dataArray:%Binary]]></FormalSpec>
+<ProcedureBlock>0</ProcedureBlock>
+<Implementation><![CDATA[
+	kill dataArray
+	new oFile,sc,record,fieldCount,fieldRec,fieldName,fieldVal
+	if fileName="" {
+		set sc=$system.Status.Error(5001,"Empty file name")
+		throw ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+	}
+	set oFile=##class(%File).%New(fileName)
+	if '$isobject(oFile) {
+		set sc=%objlasterror
+		throw ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+	}
+	set sc=oFile.Open("RS")
+	throw:'sc ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+	for recordNum = 1 : 1 {
+		set record=oFile.ReadLine(,.sc)
+		quit:(oFile.AtEnd)&&(record="")
+		set fieldCount=$length(record,HGDELIMITER)
+		for i=1:1:fieldCount {
+			set fieldRec=$piece(record,HGDELIMITER,i)
+			continue:(fieldRec="")
+			if HGDELIMITER'=..#DELIMITER {
+				set fieldName=$piece(fieldRec,"=",1)
+				set fieldVal=##class(%CSP.Page).UnescapeURL($piece(fieldRec,"=",2))	// unescape value as well
+			} else {
+				set fieldName="col"_i
+				set fieldVal=$translate(fieldRec,"""")									// remove any quotes from csv file
+			}
+			set @fieldName=fieldVal												// create a variable in memory with the value read from the file. ie: HourlyRate=1
+			set dataArray=recordNum
+			set $list(dataArray(recordNum), i) = $listbuild(fieldName,fieldVal)
+		}
+	}
+	do oFile.Close()
+exit2
+	quit sc
+]]></Implementation>
+</Method>
+
+<Method name="generateTimeSheet">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[weekNumber:%Integer=0,date:%Date=$horolog,excelFormat:%String="csv",&longFileName:%String="",&shortFileName:HourGuard.Excel="",DEBUG:%Boolean=0]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	try {
+		set externalDateFormat = 0
+		set year = $piece($zdate($horolog,3),"-")
+		if 'weekNumber {
+			set sc = ..getWeekNumber(date, .weekNumber, .weekDayNum, .dateFrom, .dateTo, externalDateFormat)
+		} else {
+			set sc = ..getDates(weekNumber, year, .weekDayNum, .dateFrom, .dateTo, externalDateFormat)
+		}
+		set shortFileName = "timesheet_week_"_weekNumber_"_"_$zdate(dateFrom,3)_"_"_$zdate(dateTo,3)_"."_excelFormat
+		set longFileName = ..#PATHOUT_"\"_shortFileName	// ie: C:\Timesheets\timesheet_week_11_2016-02-28_2016-03-05.csv
+		write:DEBUG !!,"Timesheet report file: ",longFileName,!
+
+		set outputFile = ##class(HourGuard.Excel).%New(excelFormat, longFileName, shortFileName, .sc)
+		throw:('sc) ##class(%Exception.StatusException).ThrowIfInterrupt(sc)
+
+		// retrieve timesheet data from table
+		set sql = 0
+		set sql($increment(sql)) = "select tsDate, Task->FullName taskName, duration"
+		set sql($increment(sql)) = "from HourGuard.Timesheet"
+		set sql($increment(sql)) = "where tsDate between "_dateFrom_" and "_dateTo
+		set stmtObject = ##class(%SQL.Statement).%New()
+		set status=stmtObject.%Prepare(.sql)
+		set rsObject=stmtObject.%Execute()
+
+		kill summary
+		while rsObject.%Next() {
+			set tsDate = rsObject.%Get("tsDate")
+			set taskName = rsObject.%Get("taskName")
+			set duration = ..round(rsObject.%Get("duration") / 60 / 60)		// round to the closest quarter. ie: 9.3 => 9.25; 9.4 => 9.5
+
+			set weeklyTotal = $get(summary(weekNumber)) + duration
+			set weeklyTotalByTaskName = $get(summary(weekNumber, "ByTaskName", taskName)) + duration
+			set dailyTotal = $get(summary(weekNumber, "ByDate", tsDate)) + duration
+			set dailyTotalByTaskName = $get(summary(weekNumber, "ByTaskName", taskName, tsDate)) + duration
+
+			set summary(weekNumber) = weeklyTotal
+			set summary(weekNumber, "ByDate", tsDate) = dailyTotal
+			set summary(weekNumber, "ByTaskName", taskName) = weeklyTotalByTaskName
+			set summary(weekNumber, "ByTaskName", taskName, tsDate) = dailyTotalByTaskName
+		}
+
+		// set up columns configuration
+		set outputFile.outputArray("columns", 1, "Width") = 267
+		for column = 2:1:8 {
+			set outputFile.outputArray("columns", column, "Width") = 55
+		}
+
+		// header row #1
+		set row = 1
+		set outputFile.outputArray(row, 1) = "Week:"
+		set outputFile.outputArray(row, 1, "Style") = "HeaderRight"
+		set outputFile.outputArray(row, 2) = weekNumber
+		set outputFile.outputArray(row, 3) = "From:"
+		set outputFile.outputArray(row, 3, "Style") = "HeaderRight"
+		set outputFile.outputArray(row, 4) = $zdate(dateFrom)
+		set outputFile.outputArray(row, 5) = "To:"
+		set outputFile.outputArray(row, 5, "Style") = "HeaderRight"
+		set outputFile.outputArray(row, 6) = $zdate(dateTo)
+
+		// empty row #2
+		set outputFile.outputArray($increment(row), 1) = ""
+
+		// details (row #3 & #4)
+		set row = $increment(row)
+		set column = 1
+		set outputFile.outputArray(row, column) = ""
+		set outputFile.outputArray(row, column, "Style") = "Header"
+		set outputFile.outputArray(row+1, column) = "Task Name"			// row #4
+		set outputFile.outputArray(row+1, column, "Style") = "Header"	// row #4
+		for weekDayNum = 0:1:6 {
+			set red = $select(("0,6"[weekDayNum):"Red",1:"")	// show weekends in red font color
+			set tsDate = dateFrom + weekDayNum
+			set outputFile.outputArray(row, $increment(column)) = $zdate(tsDate,11)
+			set outputFile.outputArray(row, column, "Style") = "Header"_red
+			//set outputFile.outputArray(row+1, column) = $zdate(tsDate)
+			//set outputFile.outputArray(row+1, column, "Style") = "HeaderDate"_red
+			set outputFile.outputArray(row+1, column) = $piece($zdate(tsDate),"/",1,2)
+			set outputFile.outputArray(row+1, column, "Style") = "Header"_red
+		}
+		set outputFile.outputArray(row, $increment(column)) = ""
+		set outputFile.outputArray(row, column, "Style") = "Header"
+		set outputFile.outputArray($increment(row), column) = "Totals"	// row #4
+		set outputFile.outputArray(row, column, "Style") = "Header"
+		
+		// print details (tasks and durations per day) - from row #5
+		set firstDetailsRow = row + 1
+		set weekNumber = ""
+		for {
+			set weekNumber = $order(summary(weekNumber))
+			quit:(weekNumber = "")
+
+			// tasks per day
+			set taskName = ""
+			for {
+				set taskName = $order(summary(weekNumber, "ByTaskName", taskName))
+				quit:(taskName = "")
+
+				set column = 1
+				set outputFile.outputArray($increment(row), column) = taskName	// row #5 + <n> numbers of tasks
+				for weekDayNum = 0:1:6 {
+					set tsDate = dateFrom + weekDayNum
+					set duration = $get(summary(weekNumber, "ByTaskName", taskName, tsDate))
+					set durationInMinutes = $fnumber(duration,"",2)
+					set outputFile.outputArray(row, $increment(column)) = durationInMinutes
+					set outputFile.outputArray(row, column, "Style") = "Centered"_$select(("0,6"[weekDayNum):"Red",1:"")	// show weekends in red font color
+
+					#; to-do: TBD - save off the timesheets after calculated
+					#;set weeklyTimesheet = ##class(HourGuard.WeeklyTimesheet).%New(weekNumber,weekDayNum,tsDate,taskName,dailyTotal,dailyTotalByTaskName)
+				}
+				set outputFile.outputArray(row, $increment(column)) = $fnumber($get(summary(weekNumber, "ByTaskName", taskName)),"",2)
+				set outputFile.outputArray(row, column, "Formula") = "=SUM(RC[-7]:RC[-1])"	// SUM 7 PREVIOUS COLUMNS IN THE SAME ROW
+				set outputFile.outputArray(row, column, "Style") = "Centered"
+			}
+			
+			// totals by date:
+			set column = 1
+			set outputFile.outputArray($increment(row), column) = "Totals:"
+			set outputFile.outputArray(row, column, "Style") = "HeaderRight"
+			for weekDayNum = 0:1:6 {
+				set tsDate = dateFrom + weekDayNum
+				set duration = $get(summary(weekNumber, "ByDate", tsDate))
+				set durationInMinutes = $fnumber(duration,"",2)
+				set outputFile.outputArray(row, $increment(column)) = durationInMinutes
+				set outputFile.outputArray(row, column, "Formula") = "=SUM(R[-"_(row-firstDetailsRow)_"]C:R[-1]C)"	// SUM THIS COLUMN FROM ROW 5 TO PREVIOUS 1 ROW
+				set outputFile.outputArray(row, column, "Style") = "Header"_$select(("0,6"[weekDayNum):"Red",1:"")	// show weekends in red font color
+			}
+			set totalDurationInMinutes = $fnumber(summary(weekNumber),"",2)
+			set outputFile.outputArray(row, $increment(column)) = totalDurationInMinutes
+			set outputFile.outputArray(row, column, "Formula") = "=SUM(RC[-7]:RC[-1])"	// SUM ALL PREVIOUS 7 COLUMNS IN THIS ROW
+			set outputFile.outputArray(row, column, "Style") = "Header"
+		}
+
+		$$$THROWONERROR(status,outputFile.Save(DEBUG))
+
+	} catch eException {
+		set status=eException.AsStatus()
+	}
+	quit status
+]]></Implementation>
+</Method>
+
+<Method name="round">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>value,roundedTo=4</FormalSpec>
+<Implementation><![CDATA[	quit $fnumber(value * roundedTo, "", 0) / roundedTo
+]]></Implementation>
+</Method>
+
+<Method name="getWeekNumber">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[date:%Date=+$horolog,&weekNumber:%Integer,&weekDayNum:%Integer,&dateFrom:%Date,&dateTo:%Date,externalDateFormat:%Boolean=0]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set statusCode = $system.Status.OK()
+	set (weekNumber,weekDayNum,dateFrom,dateTo) = ""
+	try {
+		if 'date set date = +$horolog
+		set weekDayNum = $zdate(date, 10)			// ie: day 0 = Sunday, 1 = Monday, etc.
+		set dateFrom = date - ( 7 + weekDayNum )	// Previous week's Sunday
+		set dateTo = dateFrom + 6					// Previous week's Saturday
+		set date = dateFrom
+		set weekDayNum = $zdate(date, 10)			// ie: day 0 = Sunday, 1 = Monday, etc.
+		set weekNumber = $SYSTEM.SQL.WEEK(date)
+		if 'weekNumber {
+			$$$ThrowStatus($system.Status.Error(5001,"Cannot calculate week number [date="_date_"]"))
+		}
+		if externalDateFormat {
+			set dateFrom = $zdate(dateFrom)
+			set dateTo = $zdate(dateTo)
+		}
+	} catch eException {
+		set statusCode=eException.AsStatus()
+	}
+	quit statusCode
+]]></Implementation>
+</Method>
+
+<Method name="getDates">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[weekNumber:%Integer,yearNumber:%Integer,&weekDayNum:%Integer,&dateFrom:%Date,&dateTo:%Date,externalDateFormat:%Boolean=0]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set statusCode = $system.Status.OK()
+	try {
+		set day1 = $zdateh("01/01/"_yearNumber)
+		set date = day1 + ((weekNumber - 0) * 7)
+		set weekDayNum = $zdate(date, 10)			// ie: day 0 = Sunday, 1 = Monday, etc.
+		set dateFrom = date - ( 7 + weekDayNum )	// Previous week's Sunday
+		set dateTo = dateFrom + 6					// Previous week's Saturday
+		if externalDateFormat {
+			set dateFrom = $zdate(dateFrom)
+			set dateTo = $zdate(dateTo)
+		}
+	} catch eException {
+		set statusCode=eException.AsStatus()
+	}
+	quit statusCode
+]]></Implementation>
+</Method>
+</Class>
+</Export>

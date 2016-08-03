@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.Font">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62063,42005.36122</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="FontName">
+<Description>
+font
+Arial, MS Sans Serif, etc</Description>
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="ss:FontName"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Family">
+<Description>
+Font font family. It is not clear whether this effects on anything
+Serif,Roman	</Description>
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="x:Family"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Color">
+<Description>
+Font Color
+#000000</Description>
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="ss:Color"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="CharSet">
+<Description>
+What is it - I do not know, maybe the code page
+204</Description>
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="x:CharSet"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Size">
+<Type>%Integer</Type>
+<Parameter name="XMLNAME" value="ss:Size"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Bold">
+<Description>
+Boldness
+1</Description>
+<Type>%Integer</Type>
+<Parameter name="XMLNAME" value="ss:Bold"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Italic">
+<Description>
+Italic
+1</Description>
+<Type>%Integer</Type>
+<Parameter name="XMLNAME" value="ss:Italic"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Underline">
+<Description>
+Underline, different types are possible
+Single, Double</Description>
+<Type>%Integer</Type>
+<Parameter name="VALUELIST" value=",Single,Double"/>
+<Parameter name="XMLNAME" value="ss:Underline"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+</Class>
+</Export>

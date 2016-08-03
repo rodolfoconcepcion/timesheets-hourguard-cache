@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<CSP name="hg/timesheet.csp" application="/csp/samples/"><![CDATA[
+<html>
+	<head>
+		<title>Timesheets</title>
+		<script language='javascript'>
+		<!--
+		<!-- This function is needed by the search button on the form -->
+		function update(id)
+		{
+		     #server(..formLoad(id))#;
+		     return true;
+		}
+
+		function updateTask(id)
+		{
+		     #server(..formTaskLoad(id))#;
+		     return true;
+		}
+
+		// -->
+		</script>
+	</head>
+	<body>
+		<h1 align='center'>Timesheets</h1>
+
+		<!-- set the domain so error messages could be properly localized -->
+		<csp:class DOMAIN='%CSPBind'>
+
+		<!-- use CSP:OBJECT tag to create a reference to an instance of the class -->
+		<csp:object name='objForm' classname='HourGuard.Timesheet' OBJID='#(%request.Get("OBJID"))#'>
+
+		<!-- use csp:search tag to create a javascript function to invoke a search page --> 
+		<csp:search name='form_search' classname='HourGuard.Timesheet' where='%Id()' options='popup,nopredicates' onselect='update'>
+
+		<csp:search name='findTask' classname='HourGuard.Task' where='FullName' options='popup,nopredicates' caption='Task FullName' startvalues='TaskFullName' onselect='updateTask'>
+
+		<form name='form' cspbind='objForm' cspjs='All' onsubmit='return form_validate();'>
+		<center>
+		<table cellpadding='3'>
+			<tr>
+				<td><b><div align='right'>*NT User Id:</div></b></td>
+				<td><input type='text' name='NTuserid' cspbind='NTuserid' size='50' csprequired></td>
+			</tr>
+			<tr>
+				<td><b><div align='right'>*Date:</div></b></td>
+				<td><input type='text' name='tsDate' cspbind='tsDate' size='10' csprequired></td>
+			</tr>
+			<tr>
+				<td><b><div align='right'>*Time:</div></b></td>
+				<td><input type='text' name='tsTime' cspbind='tsTime' size='10' csprequired></td>
+			</tr>
+			<tr>
+				<td><b><div align='right'>*Duration (In Seconds):</div></b></td>
+				<td><input type='text' name='Duration' cspbind='Duration' size='10' csprequired></td>
+			</tr>
+			<tr>
+				<td><input type='hidden' size='10' name='TaskID' cspbind='Task'><b><div align='right'>Task FullName:</div></b></td>
+				<td>
+					<input type='text' name='Task' cspbind='Task.FullName' size='10' readonly>
+					<input type='button' name='btnFind' value='Find' onclick='findTask();'>
+				</td>
+			</tr>
+			<tr>
+				<td><font color='#666666'><b><div align='right'>Task TaskId:</div></b></font></td>
+				<td><input type='text' name='TaskTaskId' cspbind='Task.TaskId' size='80' readonly></td>
+			</tr>
+			<tr>
+				<td><font color='#666666'><b><div align='right'>Task Account:</div></b></font></td>
+				<td><input type='text' name='TaskAccount' cspbind='Task.Account' size='80' readonly></td>
+			</tr>
+			<tr>
+				<td><font color='#666666'><b><div align='right'>Task Closed:</div></b></font></td>
+				<td><input type='text' name='TaskClosed' cspbind='Task.Closed' size='80' readonly></td>
+			</tr>
+			<tr>
+				<td><font color='#666666'><b><div align='right'>Task Complete:</div></b></font></td>
+				<td><input type='text' name='TaskComplete' cspbind='Task.Complete' size='80' readonly></td>
+			</tr>
+			<tr>
+				<td><font color='#666666'><b><div align='right'>Task FullName:</div></b></font></td>
+				<td><input type='text' name='TaskFullName' cspbind='Task.FullName' size='80' readonly></td>
+			</tr>
+			<tr>
+				<td><font color='#666666'><b><div align='right'>Task HourlyRate:</div></b></font></td>
+				<td><input type='text' name='TaskHourlyRate' cspbind='Task.HourlyRate' size='80' readonly></td>
+			</tr>
+			<tr>
+				<td><font color='#666666'><b><div align='right'>Task Name:</div></b></font></td>
+				<td><input type='text' name='TaskName' cspbind='Task.Name' size='80' readonly></td>
+			</tr>
+			<tr>
+				<td><font color='#666666'><b><div align='right'>Task Notes:</div></b></font></td>
+				<td><input type='text' name='TaskNotes' cspbind='Task.Notes' size='80' readonly></td>
+			</tr>
+			<tr>
+				<td><font color='#666666'><b><div align='right'>Task ParentTask:</div></b></font></td>
+				<td><input type='text' name='TaskParentTask' cspbind='Task.ParentTask' size='80' readonly></td>
+			</tr>
+			<tr>
+				<td><font color='#666666'><b><div align='right'>Task UseAccountHourlyRate:</div></b></font></td>
+				<td><input type='text' name='TaskUseAccountHourlyRate' cspbind='Task.UseAccountHourlyRate' size='80' readonly></td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td>
+					<input type='button' name='btnClear' value='#(%response.GetText("","%CSPSearch","ClearBtn","clear"))#' onclick='form_new();'>
+					<input type='button' name='btnSave' value='#(%response.GetText("","%CSPSearch","SaveBtn","save"))#' onclick='form_save();'>
+					<input type='button' name='btnSearch' value='#(%response.GetText("","%CSPSearch","SearchBtn","search"))#' onclick='form_search();'>
+				</td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td><font color='#000088' size='2'>#(%response.GetText("","%CSPSearch","RequiredNote","(* Denotes required fields)"))#'</font></td>
+			</tr>
+		</table>
+		</center>
+		</form>
+	</body>
+</html>
+]]></CSP>
+</Export>

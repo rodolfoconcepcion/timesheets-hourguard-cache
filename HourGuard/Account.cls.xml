@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="HourGuard.Account">
+<Description>
+</Description>
+<Super>%Persistent</Super>
+<TimeCreated>62438,33327.625178</TimeCreated>
+
+<Property name="Name">
+<Description>
+Account Name</Description>
+<Type>%String</Type>
+</Property>
+
+<Property name="HourlyRate">
+<Description>
+Account's Hourly Rate ($)</Description>
+<Type>%Currency</Type>
+</Property>
+
+<Method name="exists">
+<Description>
+returns true if account name is found</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>accountName:%String</FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	s found=0
+	&sql(select ID into :id from HourGuard.Account where Name = :accountName)
+	i 'SQLCODE s found=id
+	q found
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^HourGuard.AccountD</DataLocation>
+<DefaultData>AccountDefaultData</DefaultData>
+<IdLocation>^HourGuard.AccountD</IdLocation>
+<IndexLocation>^HourGuard.AccountI</IndexLocation>
+<StreamLocation>^HourGuard.AccountS</StreamLocation>
+<Data name="AccountDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>HourlyRate</Value>
+</Value>
+<Value name="3">
+<Value>Name</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

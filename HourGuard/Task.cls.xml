@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="HourGuard.Task">
+<Description>
+</Description>
+<Super>%Persistent,%Populate,%XML.Adaptor</Super>
+<TimeCreated>62438,31348.339756</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="TaskId">
+<Description>
+Task ID, used by Timesheet class</Description>
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Account">
+<Description>
+ie. TDA</Description>
+<Type>Account</Type>
+</Property>
+
+<Property name="Name">
+<Description>
+Task Name</Description>
+<Type>%String</Type>
+</Property>
+
+<Property name="FullName">
+<Description>
+Task Full Name</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="100"/>
+</Property>
+
+<Property name="Complete">
+<Description>
+Task is Complete?</Description>
+<Type>%Boolean</Type>
+</Property>
+
+<Property name="Closed">
+<Description>
+Task is Closed?</Description>
+<Type>%Boolean</Type>
+</Property>
+
+<Property name="UseAccountHourlyRate">
+<Description>
+Should we use the account's hourly rate?</Description>
+<Type>%Boolean</Type>
+</Property>
+
+<Property name="HourlyRate">
+<Description>
+Dollar amount of the Hourly Rate</Description>
+<Type>%Currency</Type>
+</Property>
+
+<Property name="Notes">
+<Description>
+Task notes</Description>
+<Type>%String</Type>
+</Property>
+
+<Property name="ParentTask">
+<Description>
+Parent Task id</Description>
+<Type>%Integer</Type>
+</Property>
+
+<Method name="exists">
+<Description>
+returns true if task id is found</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>TaskId:%String</FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	s found=0
+	&sql(select ID into :id from HourGuard.Task where TaskId = :TaskId)
+	i 'SQLCODE s found=id
+	q found
+]]></Implementation>
+</Method>
+
+<Index name="taskIdIdx">
+<IdKey>1</IdKey>
+<PrimaryKey>1</PrimaryKey>
+<Properties>TaskId</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^HourGuard.TaskD</DataLocation>
+<DefaultData>TaskDefaultData</DefaultData>
+<IdLocation>^HourGuard.TaskD</IdLocation>
+<IndexLocation>^HourGuard.TaskI</IndexLocation>
+<StreamLocation>^HourGuard.TaskS</StreamLocation>
+<Data name="TaskDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>Account</Value>
+</Value>
+<Value name="3">
+<Value>Closed</Value>
+</Value>
+<Value name="4">
+<Value>Complete</Value>
+</Value>
+<Value name="5">
+<Value>FullName</Value>
+</Value>
+<Value name="6">
+<Value>HourlyRate</Value>
+</Value>
+<Value name="7">
+<Value>Name</Value>
+</Value>
+<Value name="8">
+<Value>Notes</Value>
+</Value>
+<Value name="9">
+<Value>ParentTask</Value>
+</Value>
+<Value name="10">
+<Value>UseAccountHourlyRate</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

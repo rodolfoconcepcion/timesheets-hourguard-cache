@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="HourGuard.Excel">
+<Description>
+XML Excel Template</Description>
+<Super>Excel.Workbook</Super>
+<TimeCreated>63991,61560.562972</TimeCreated>
+
+<Parameter name="DELIMITER">
+<Description>
+Delimiter for output</Description>
+<Default>,</Default>
+</Parameter>
+
+<Parameter name="EXCELFORMATS">
+<Description>
+Valid Excel formats</Description>
+<Default>,csv,xls,</Default>
+</Parameter>
+
+<Property name="excelFormat">
+<Description>
+csv or xls</Description>
+<Type>%String</Type>
+<InitialExpression>"xls"</InitialExpression>
+</Property>
+
+<Property name="longFileName">
+<Type>%String</Type>
+</Property>
+
+<Property name="shortFileName">
+<Type>%String</Type>
+</Property>
+
+<Property name="fileObject">
+<Type>%File</Type>
+</Property>
+
+<Property name="outputArray">
+<Type>%Binary</Type>
+<MultiDimensional>1</MultiDimensional>
+</Property>
+
+<Method name="%OnNew">
+<Description>
+Create a dummy document, initialize nested objects</Description>
+<FormalSpec><![CDATA[excelFormat:%String="csv",longFileName:%String="",shortFileName:%String="",&status:%Status]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set status = $system.Status.OK()
+	try {
+		if (..#EXCELFORMATS '[ excelFormat) {
+			throw ##class(%Exception.General).%New("Invalid Excel Format (csv/xls only)")
+		}
+		set ..excelFormat = excelFormat
+		if excelFormat="csv" {
+			set ..fileObject = ##class(%File).%New(longFileName)
+			$$$THROWONERROR(status, ..fileObject.Open("WNS",1))
+		} elseif excelFormat = "xls" {
+			set ..longFileName = longFileName
+			set ..shortFileName = shortFileName
+			set ..Indent=1	//Indentation XML file
+
+			set ..DocumentProperties=##class(Excel.DocumentProperties).%New()
+			set ..OfficeDocumentSettings=##class(Excel.OfficeDocumentSettings).%New()
+			set ..ExcelWorkbook=##class(Excel.ExcelWorkbook).%New()
+
+			set styleId="Default"
+			set ..Style(styleId).Name="Normal"
+			set ..Style(styleId).Alignment.Vertical="Bottom"
+			set ..Style(styleId).Font.FontName="Arial"
+			set ..Style(styleId).Font.Family="Swiss"
+			set ..Style(styleId).Font.Color="#000000"
+			
+			set styleId="Header"		//style 1
+			set ..Style(styleId).Name=styleId
+			set ..Style(styleId).Alignment.Horizontal="Center"
+			set ..Style(styleId).Alignment.Vertical="Bottom"
+			set ..Style(styleId).Font.FontName="Arial"
+			set ..Style(styleId).Font.Family="Swiss"
+			set ..Style(styleId).Font.Color="#000000"
+			set ..Style(styleId).Font.Bold=1
+			set ..Style(styleId).Interior.Color="#D9D9D9"
+			set ..Style(styleId).Interior.Pattern="Solid"
+			
+			set styleId="HeaderDate"	//style 2
+			set ..Style(styleId).Name=styleId
+			set ..Style(styleId).Alignment.Horizontal="Center"
+			set ..Style(styleId).Alignment.Vertical="Bottom"
+			set ..Style(styleId).Font.FontName="Arial"
+			set ..Style(styleId).Font.Family="Swiss"
+			set ..Style(styleId).Font.Color="#000000"
+			set ..Style(styleId).Font.Bold=1
+			set ..Style(styleId).Interior.Color="#D9D9D9"
+			set ..Style(styleId).Interior.Pattern="Solid"
+			set ..Style(styleId).Format="m/d;@"
+
+			set styleId="HeaderDateRed"		//style 3
+			set ..Style(styleId).Name=styleId
+			set ..Style(styleId).Alignment.Horizontal="Center"
+			set ..Style(styleId).Alignment.Vertical="Bottom"
+			set ..Style(styleId).Font.FontName="Arial"
+			set ..Style(styleId).Font.Family="Swiss"
+			set ..Style(styleId).Font.Color="#FF0000"
+			set ..Style(styleId).Font.Bold=1
+			set ..Style(styleId).Interior.Color="#D9D9D9"
+			set ..Style(styleId).Interior.Pattern="Solid"
+			set ..Style(styleId).Format="m/d;@"
+
+			set styleId="HeaderRed"		//style 6
+			set ..Style(styleId).Name=styleId
+			set ..Style(styleId).Alignment.Horizontal="Center"
+			set ..Style(styleId).Alignment.Vertical="Bottom"
+			set ..Style(styleId).Font.FontName="Arial"
+			set ..Style(styleId).Font.Family="Swiss"
+			set ..Style(styleId).Font.Color="#FF0000"
+			set ..Style(styleId).Font.Bold=1
+			set ..Style(styleId).Interior.Color="#D9D9D9"
+			set ..Style(styleId).Interior.Pattern="Solid"
+
+			set styleId="Centered"		//style 4
+			set ..Style(styleId).Name=styleId
+			set ..Style(styleId).Alignment.Horizontal="Center"
+			set ..Style(styleId).Alignment.Vertical="Bottom"
+
+			set styleId="CenteredRed"		//style 5
+			set ..Style(styleId).Name=styleId
+			set ..Style(styleId).Alignment.Horizontal="Center"
+			set ..Style(styleId).Alignment.Vertical="Bottom"
+			set ..Style(styleId).Font.FontName="Arial"
+			set ..Style(styleId).Font.Family="Swiss"
+			set ..Style(styleId).Font.Color="#FF0000"
+
+			set styleId="RedBold"		//style 5
+			set ..Style(styleId).Name=styleId
+			set ..Style(styleId).Alignment.Horizontal="Center"
+			set ..Style(styleId).Alignment.Vertical="Bottom"
+			set ..Style(styleId).Font.FontName="Arial"
+			set ..Style(styleId).Font.Family="Swiss"
+			set ..Style(styleId).Font.Color="#FF0000"
+			set ..Style(styleId).Font.Bold=1
+
+			set styleId="HeaderRight"		//style 6
+			set ..Style(styleId).Name=styleId
+			set ..Style(styleId).Alignment.Horizontal="Right"
+			set ..Style(styleId).Alignment.Vertical="Bottom"
+			set ..Style(styleId).Font.FontName="Arial"
+			set ..Style(styleId).Font.Family="Swiss"
+			set ..Style(styleId).Font.Color="#000000"
+			set ..Style(styleId).Font.Bold=1
+			set ..Style(styleId).Interior.Color="#D9D9D9"
+			set ..Style(styleId).Interior.Pattern="Solid"
+		}
+	} catch e {
+		set status = e.AsStatus()
+	}
+	quit status
+]]></Implementation>
+</Method>
+
+<Method name="printOutputArray">
+<FormalSpec>DEBUG:%Boolean=0</FormalSpec>
+<Implementation><![CDATA[
+	set:DEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"printOutputArray-1","excelFormat") = ..excelFormat
+	merge:DEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"printOutputArray-2","outputArray") = ..outputArray
+	
+	if $data(..outputArray("columns")) {
+		set column = ""
+		for {
+			set column = $order(..outputArray("columns",column))
+			quit:(column = "")
+			
+			set columnObj = ..WorkSheet("Sheet1").Column(column)
+			set columnProperty = ""
+			for {
+				set columnProperty = $order(..outputArray("columns",column,columnProperty), 1, columnPropertyValue)
+				quit:(columnProperty = "")
+				set $property(columnObj, columnProperty) = columnPropertyValue
+			}
+			kill columnObj
+		}
+	}
+	
+	set row = 0
+	for {
+		set row = $order(..outputArray(row))
+		continue:(row = "columns")
+		quit:(row = "")
+		set (column, outputLine, delim) = ""
+		for {
+			set column = $order(..outputArray(row, column),1,cellData)
+			quit:(column = "")
+
+			if ..excelFormat = "csv" {
+				set outputLine = outputLine_delim_cellData
+				set delim = ..#DELIMITER
+			} elseif ..excelFormat = "xls" {
+				set cellType = "String"
+				set cellStyleId = $get(..outputArray(row, column, "Style"), "Default")
+
+				if cellStyleId [ "Date" {
+					set cellType = "DateTime"
+					set:DEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"printOutputArray-3")=cellData
+					set cellData = $zdateh(cellData)
+					set:DEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"printOutputArray-4")=cellData
+				} elseif ($isvalidnum(cellData)) {
+					set cellType = "Number"
+				}
+				
+				set formula = $get(..outputArray(row, column, "Formula"))
+
+				do ..WorkSheet("Sheet1").Cell(row,column).SetData(cellData,cellType,cellStyleId,,,formula)
+			}
+		}
+		if ..excelFormat = "csv" {
+			write:DEBUG !,outputLine
+			do ..WriteLine(outputLine)
+		}
+	}
+]]></Implementation>
+</Method>
+
+<Method name="WriteLine">
+<FormalSpec>outputLine:%String</FormalSpec>
+<Implementation><![CDATA[	do ..fileObject.WriteLine(outputLine)
+]]></Implementation>
+</Method>
+
+<Method name="Save">
+<FormalSpec>DEBUG:%Boolean=0</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set status = $system.Status.OK()
+	try {
+		do ..printOutputArray(DEBUG)	// "prints" the array to either CSV or XLS format
+
+		if ..excelFormat = "xls" {
+			do ..SaveToFile(..longFileName)
+		}
+	} catch e {
+		set status = e.AsStatus()
+	}
+	quit status
+]]></Implementation>
+</Method>
+
+<Method name="Test">
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+	#dim excel as HourGuard.Excel
+	set excel=..%New()
+	set excel.Indent=0	//Indentation XML file
+
+	set styleId="Default"
+	set excel.Style(styleId).Alignment.Vertical="Bottom"
+	set excel.Style(styleId).Font.FontName="Arial"
+	set excel.Style(styleId).Font.Family="Swiss"
+	set excel.Style(styleId).Font.Color="#000000"
+
+	set styleId(1)="m120530688"
+	set excel.Style(styleId(1)).Alignment.Horizontal="Center"
+	set excel.Style(styleId(1)).Alignment.Vertical="Top"
+	set excel.Style(styleId(1)).BorderBottom.LineStyle="Continuous"
+	set excel.Style(styleId(1)).BorderBottom.Weight=1
+	set excel.Style(styleId(1)).BorderLeft.LineStyle="Continuous"
+	set excel.Style(styleId(1)).BorderLeft.Weight=1
+	set excel.Style(styleId(1)).BorderRight.LineStyle="Continuous"
+	set excel.Style(styleId(1)).BorderRight.Weight=1
+	set excel.Style(styleId(1)).BorderTop.LineStyle="Continuous"
+	set excel.Style(styleId(1)).BorderTop.Weight=1
+	set excel.Style(styleId(1)).Font.FontName="Arial"
+	set excel.Style(styleId(1)).Font.Family="Swiss"
+	set excel.Style(styleId(1)).Font.Color="#000000"
+	set excel.Style(styleId(1)).Font.Bold=1
+	set excel.Style(styleId(1)).Interior.Color="#D9D9D9"
+	set excel.Style(styleId(1)).Interior.Pattern="Solid"
+	
+	set styleId(2)="s62"
+	set excel.Style(styleId(2)).Alignment.Horizontal="Left"
+	set excel.Style(styleId(2)).Alignment.Vertical="Top"
+
+	set styleId(3)="s64"
+	set excel.Style(styleId(3)).Alignment.Horizontal="Left"
+	set excel.Style(styleId(3)).Alignment.Vertical="Top"
+	set excel.Style(styleId(3)).BorderBottom.LineStyle="Continuous"
+	set excel.Style(styleId(3)).BorderBottom.Weight=1
+	set excel.Style(styleId(3)).BorderLeft.LineStyle="Continuous"
+	set excel.Style(styleId(3)).BorderLeft.Weight=1
+	set excel.Style(styleId(3)).BorderRight.LineStyle="Continuous"
+	set excel.Style(styleId(3)).BorderRight.Weight=1
+	set excel.Style(styleId(3)).BorderTop.LineStyle="Continuous"
+	set excel.Style(styleId(3)).BorderTop.Weight=1
+
+	set styleId(4)="s65"
+	set excel.Style(styleId(4)).Alignment.Horizontal="Left"
+	set excel.Style(styleId(4)).Alignment.Vertical="Top"
+	set excel.Style(styleId(4)).BorderBottom.LineStyle="Continuous"
+	set excel.Style(styleId(4)).BorderBottom.Weight=1
+	set excel.Style(styleId(4)).BorderLeft.LineStyle="Continuous"
+	set excel.Style(styleId(4)).BorderLeft.Weight=1
+	set excel.Style(styleId(4)).BorderRight.LineStyle="Continuous"
+	set excel.Style(styleId(4)).BorderRight.Weight=1
+	set excel.Style(styleId(4)).BorderTop.LineStyle="Continuous"
+	set excel.Style(styleId(4)).BorderTop.Weight=1
+	set excel.Style(styleId(4)).Format="Short Date"
+
+	set styleId(5)="s66"
+	set excel.Style(styleId(5)).Alignment.Horizontal="Left"
+	set excel.Style(styleId(5)).Alignment.Vertical="Top"
+	set excel.Style(styleId(5)).Format="Short Date"
+
+	set styleId(6)="s67"
+	set excel.Style(styleId(6)).Alignment.Horizontal="Left"
+	set excel.Style(styleId(6)).Alignment.Vertical="Top"
+	set excel.Style(styleId(6)).Font.FontName="Arial"
+	set excel.Style(styleId(6)).Font.Family="Swiss"
+	set excel.Style(styleId(6)).Font.Color="#000000"
+	set excel.Style(styleId(6)).Font.Bold=1
+
+	set styleId(7)="s82"
+	set excel.Style(styleId(7)).Alignment.Horizontal="Center"
+	set excel.Style(styleId(7)).Alignment.Vertical="Top"
+	set excel.Style(styleId(7)).BorderBottom.LineStyle="Continuous"
+	set excel.Style(styleId(7)).BorderLeft.LineStyle="Continuous"
+	set excel.Style(styleId(7)).BorderRight.LineStyle="Continuous"
+	set excel.Style(styleId(7)).BorderTop.LineStyle="Continuous"
+	set excel.Style(styleId(7)).BorderBottom.Weight=1
+	set excel.Style(styleId(7)).BorderLeft.Weight=1
+	set excel.Style(styleId(7)).BorderRight.Weight=1
+	set excel.Style(styleId(7)).BorderTop.Weight=1
+	set excel.Style(styleId(7)).Format="Short Date"
+	set excel.Style(styleId(7)).Font.FontName="Arial"
+	set excel.Style(styleId(7)).Font.Family="Swiss"
+	set excel.Style(styleId(7)).Font.Color="#000000"
+	set excel.Style(styleId(7)).Font.Bold=1
+	set excel.Style(styleId(7)).Interior.Color="#D9D9D9"
+	set excel.Style(styleId(7)).Interior.Pattern="Solid"
+
+	set ws1="timesheet_week_12_2016-03-06_20"
+	set excel.WorkSheet("Data").Column(1).Width=300
+	set excel.WorkSheet("Data").Column(2).Width=60
+	set excel.WorkSheet("Data").Column(2).AutoFitWidth=0
+	set excel.WorkSheet("Data").Column(4).Width=200
+	do excel.WorkSheet("Data").Cell(1,2).SetData("Hello 979","String",styleId(1))
+	do excel.WorkSheet("Data").Cell(10,3).SetData("Blah blah 2342","String")
+	do excel.WorkSheet("Data").Cell(2,1).SetData(10.1,"Number",styleId(1),,2)
+	do excel.WorkSheet("Data").Cell(3,2).SetData(10000/3,"Number",styleId(1))
+	do excel.WorkSheet("Data").Cell(3,3).SetData($horolog,"DateTime",styleId(2),2,2)
+
+	do excel.WorkSheet("These2").Cell(1,3).SetData("Second page","String")
+	#;do excel.WorkSheet("Data").Cell(1,2).KillData()
+	set excel.WorkSheet("Data").Row(1).Height=100
+	set excel.WorkSheet("These2").Row(1).AutoFitHeight=1
+	do excel.SaveToFile("c:\timesheets\excel_test_1.xls")
+]]></Implementation>
+</Method>
+</Class>
+</Export>

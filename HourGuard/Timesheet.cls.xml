@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="HourGuard.Timesheet">
+<Description>
+Timesheets</Description>
+<Super>%Persistent,%Populate,%XML.Adaptor</Super>
+<TimeCreated>62438,32993.370267</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Parameter name="NTuserid">
+<Description>
+NT user id</Description>
+<Default>con115</Default>
+</Parameter>
+
+<Property name="NTuserid">
+<Description>
+NT user id</Description>
+<Type>%String</Type>
+<InitialExpression>..#NTuserid</InitialExpression>
+</Property>
+
+<Property name="tsDate">
+<Description>
+start date</Description>
+<Type>%Date</Type>
+<InitialExpression>+$horolog</InitialExpression>
+</Property>
+
+<Property name="tsTime">
+<Description>
+start time</Description>
+<Type>%Time</Type>
+<InitialExpression>$piece($horolog,",",2)</InitialExpression>
+</Property>
+
+<Property name="Task">
+<Description>
+Defaults to 88 (RIT Team Task)</Description>
+<Type>Task</Type>
+<InitialExpression>88</InitialExpression>
+</Property>
+
+<Property name="Duration">
+<Description>
+duration in seconds</Description>
+<Type>%Integer</Type>
+</Property>
+
+<Method name="exists">
+<Description>
+returns true if date is found</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>tsDate:%Date=0,tsTime:%Time=0,Duration:%Integer=0,NTuserid:%String=..#NTuserid</FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	set found=0
+	if (tsDate)&&(NTuserid'="") {
+		&sql(select ID into :id from HourGuard.Timesheet where tsDate = :tsDate and tsTime = :tsTime and Duration = :Duration and NTuserid = :NTuserid)
+		if 'SQLCODE set found=id
+	}
+	quit found
+]]></Implementation>
+</Method>
+
+<Index name="tsDateIdx">
+<IdKey>1</IdKey>
+<PrimaryKey>1</PrimaryKey>
+<Properties>tsDate,tsTime,Duration,NTuserid</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^HourGuard.TimesheetD</DataLocation>
+<DefaultData>TimesheetDefaultData</DefaultData>
+<IdLocation>^HourGuard.TimesheetD</IdLocation>
+<IndexLocation>^HourGuard.TimesheetI</IndexLocation>
+<StreamLocation>^HourGuard.TimesheetS</StreamLocation>
+<Data name="TimesheetDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>Duration</Value>
+</Value>
+<Value name="3">
+<Value>Task</Value>
+</Value>
+<Value name="4">
+<Value>tsTime</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

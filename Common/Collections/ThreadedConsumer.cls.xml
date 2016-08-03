@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Common.Collections.ThreadedConsumer">
+<Description><![CDATA[
+<PRE>
+TD AMERITRADE CONFIDENTIAL CONTROLLED.  DO NOT COPY OR DISTRIBUTE FURTHER.  
+© 2015 Think Tech, Inc.  All rights reserved.  
+
+=======================================================================
+Description: Extends a Consumer function to accept threads.
+
+=======================================================================
+                     REVISIONS AND MODIFICATIONS
+-----------|---------|-------------------------------------------------
+03/02/2015   sno246    Genesis
+=======================================================================
+</PRE> ]]></Description>
+<Super>Common.Collections.Consumer,Lib.Function.IThreadedConsumer</Super>
+<TimeCreated>63588,54021.298416</TimeCreated>
+
+<Method name="acceptThread">
+<Description>
+Applies each bundle element to a Consumer defined in the RuntimeConfig.</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>config:Launcher.RuntimeConfig,bundle:Launcher.Bundle</FormalSpec>
+<Implementation><![CDATA[
+	d config.FetchVars()
+	s consumer=..%New(config.GetProperty("threadedConsumer"))
+	while (bundle.HasNext()) {
+		d consumer.accept(bundle.GetNext())
+	}
+]]></Implementation>
+</Method>
+
+<Method name="acceptDependent">
+<Description>
+Applies a dependent Consumer defined in the RuntimeConfig.</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>config:Launcher.RuntimeConfig</FormalSpec>
+<Implementation><![CDATA[
+	d config.FetchVars()
+	d ..%New(config.GetProperty("dependentConsumer")).accept()
+]]></Implementation>
+</Method>
+</Class>
+</Export>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.Cell">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62062,57080.591593</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="StyleId">
+<Type>%String</Type>
+<InitialExpression>"Default"</InitialExpression>
+<Parameter name="XMLNAME" value="ss:StyleID"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Formula">
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="ss:Formula"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="MergeAcross">
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="ss:MergeAcross"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="MergeDown">
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="ss:MergeDown"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Data">
+<Type>Excel.Data</Type>
+</Property>
+
+<Method name="SetData">
+<Description>
+Record data in the cell</Description>
+<FormalSpec>value:%String="",type:%String="String",styleid:%String="Default",mergeAcross:%Integer="",mergeDown:%Integer="",formula:%String=""</FormalSpec>
+<Implementation><![CDATA[
+	set ..StyleId = styleid
+	if type = "DateTime" {
+		//set value = $zdate(value,3)_"T00:00:00.000"
+		set value = $zdatetime(value,3,7)		// ie: 2016-03-14T15:54:01Z
+	}
+	if formula '= "" {
+		set ..Formula = formula
+	}
+	if value '="" {
+		set ..Data = ##class(Excel.Data).%New()
+		set ..Data.Type = type
+		set ..Data.Value = value
+		set ..MergeAcross = mergeAcross
+		set ..MergeDown = mergeDown
+	}
+]]></Implementation>
+</Method>
+
+<Method name="KillData">
+<Implementation><![CDATA[
+	set ..StyleId = "Default"
+	set ..Data = ""
+]]></Implementation>
+</Method>
+</Class>
+</Export>

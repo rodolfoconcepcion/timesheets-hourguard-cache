@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Common.Collections.ResultSetIdList">
+<Description><![CDATA[
+<pre>
+TD AMERITRADE CONFIDENTIAL CONTROLLED.  DO NOT COPY OR DISTRIBUTE FURTHER.
+© 2012 ThinkTech, Inc.  All rights reserved.
+
+Revision History
+------------------------------------------------
+2012-04-03    andrew.watt    Created.
+------------------------------------------------
+
+AbstractIdList implementation based on a %ResultSet with an ID column.
+</pre>]]></Description>
+<IncludeCode>Exceptions</IncludeCode>
+<Super>%RegisteredObject,Common.Collections.AbstractIdList</Super>
+<TimeCreated>62546,55629.503804</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="Classname">
+<Type>%String</Type>
+<Internal>1</Internal>
+<Private>1</Private>
+</Property>
+
+<Property name="Ids">
+<Internal>1</Internal>
+<MultiDimensional>1</MultiDimensional>
+<Private>1</Private>
+</Property>
+
+<Method name="%OnNew">
+<Internal>1</Internal>
+<FormalSpec>rs:%ResultSet,classname:%String,idColumnIndex:%Integer</FormalSpec>
+<Private>1</Private>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	if $g(classname)="" {
+		throw ##class(Exception.IllegalArgumentException).CreateWithMessage("classname cannot be null")
+	} elseif '$g(idColumnIndex) {
+		throw ##class(Exception.IllegalArgumentException).CreateWithMessage("idColumnIndex must be a positive integer")
+	}
+	
+	s ..Classname=classname
+	
+	while rs.Next(.sc) {
+		s id=rs.GetData(idColumnIndex)
+		s ..Ids($i(count))=id
+	}
+	$$$ThrowMessageOnError(sc,"Could not advance resultset on "_rs.ClassName_":"_rs.QueryName)
+	
+	d rs.Close()
+	q $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="GetClassname">
+<Description>
+Get the classname that these ids correspond to</Description>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[	q ..Classname
+]]></Implementation>
+</Method>
+
+<Method name="GetAt">
+<Description>
+Get the id at the specified index in the list</Description>
+<FormalSpec>index:%Integer</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[	q ..Ids(index)
+]]></Implementation>
+</Method>
+
+<Method name="Count">
+<Description>
+Get the number of ids in this list</Description>
+<ReturnType>%Integer</ReturnType>
+<Implementation><![CDATA[	q +$o(..Ids(""),-1)
+]]></Implementation>
+</Method>
+
+<Method name="CreateFromResultSet">
+<Description>
+Create a new instance based on the specified resultset.
+
+Requirements:
+* The resultset's query must contain an ID as identified by the CONTAINSID parameter.
+* If the query class is not the same as the class of the IDs it returns, the ID class
+  must be identified by the EXTENT parameter on the query.
+If either of these conditions are not true, use the %New constructor instead of this method,
+and pass in a different ID column index and classname.
+
+The resultset will be closed once all rows have been read. </Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>rs:%ResultSet</FormalSpec>
+<ReturnType>Common.Collections.ResultSetIdList</ReturnType>
+<Implementation><![CDATA[
+	s sc=$zobjclassmethod(rs.ClassName,rs.QueryName_"GetInfo",,,.idInfo)
+	$$$ThrowOnError(sc)
+	
+	s idColumnIndex=$lg(idInfo,1)
+	if 'idColumnIndex {
+		$$$ThrowMessage("Query "_rs.ClassName_":"_rs.QueryName_" does not contain an ID column")
+	}
+	s classname=$lg(idInfo,2)
+
+	q ..%New(rs,classname,idColumnIndex)
+]]></Implementation>
+</Method>
+</Class>
+</Export>

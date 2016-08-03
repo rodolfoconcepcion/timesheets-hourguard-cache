@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.Data">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62062,57081.151231</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="Type">
+<Description>
+Cell Type: String,Nubmer,DateTime</Description>
+<Type>%String</Type>
+<InitialExpression>"String"</InitialExpression>
+<Parameter name="VALUELIST" value=",String,Nubmer,DateTime"/>
+<Parameter name="XMLNAME" value="ss:Type"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Value">
+<Type>%String</Type>
+<Parameter name="XMLPROJECTION" value="CONTENT"/>
+</Property>
+</Class>
+</Export>

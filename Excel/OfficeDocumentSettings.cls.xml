@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.OfficeDocumentSettings">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>63991,66468.869078</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="xmlns">
+<Type>%String</Type>
+<InitialExpression>"urn:schemas-microsoft-com:office:office"</InitialExpression>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="AllowPNG">
+<Type>%String</Type>
+</Property>
+
+<Method name="%OnNew">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#;set ..AllowPNG=$char(0)	// NULL value to create this xml output: <AllowPNG/>
+	quit $system.Status.OK()
+]]></Implementation>
+</Method>
+</Class>
+</Export>

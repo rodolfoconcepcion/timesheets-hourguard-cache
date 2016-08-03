@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Routine name="Exceptions" type="INC"><![CDATA[
+	; TD AMERITRADE CONFIDENTIAL CONTROLLED.  DO NOT COPY OR DISTRIBUTE FURTHER.  
+	; © 2012 ThinkTech, Inc.  All rights reserved.  
+	;
+	; Macros for throwing exceptions.
+	;
+#define    ApplicationException                          "Exception.GenericException"
+    ;
+#define    ExceptionFromStatus(%errStatus)               ##class($$$ApplicationException).CreateFromStatus(%errStatus)
+#define    ThrowStatus(%errStatus)                       throw $$$ExceptionFromStatus(%errStatus)
+#define    ThrowMessage(%errMsg)                         throw ##class($$$ApplicationException).%New(,,,%errMsg)
+#define    ThrowStatusWithMessage(%errStatus,%errMsg)    throw ##class($$$ApplicationException).%New(,,,%errMsg,$$$ExceptionFromStatus(%errStatus))
+	;
+#define    ThrowOnError(%errStatus)                      Set sc=%errStatus if $$$ISERR(sc) { $$$ThrowStatus(sc) }
+#define    ThrowMessageOnError(%errStatus,%errMsg)       Set sc=%errStatus if $$$ISERR(sc) { $$$ThrowStatusWithMessage(sc,%errMsg) }
+    ; 
+	;------------------------------------------------------------------------
+	; REVISIONS AND MODIFICATIONS
+	;-----------|------------|-----------------------------------------------
+	; 2012-02-28 andrew.watt	Created
+	; 2015-06-09 kirkkk			Corrected ThrowOnError and ThrowMessageOnError from calling
+	;							%errStatus expression twice, once to check for error then another to
+	;							throw it. More inline with ISC's version in %occStatus
+	;-----------|------------|-----------------------------------------------
+	;
+
+]]></Routine>
+</Export>

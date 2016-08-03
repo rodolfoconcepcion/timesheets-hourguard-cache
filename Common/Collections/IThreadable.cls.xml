@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Common.Collections.IThreadable">
+<Description><![CDATA[
+<PRE>
+TD AMERITRADE CONFIDENTIAL CONTROLLED.  DO NOT COPY OR DISTRIBUTE FURTHER.  
+© 2015 Think Tech, Inc.  All rights reserved.  
+
+=======================================================================
+Description: Interface for a Threadable object.
+
+=======================================================================
+                     REVISIONS AND MODIFICATIONS
+-----------|---------|-------------------------------------------------
+03/02/2015   sno246    Genesis
+=======================================================================
+</PRE> ]]></Description>
+<Abstract>1</Abstract>
+<Super>Common.Collections.IIterable</Super>
+<TimeCreated>63588,54331.600961</TimeCreated>
+
+<Method name="bundleLauncher">
+<Abstract>1</Abstract>
+<ReturnType>Launcher.BundleLauncher</ReturnType>
+</Method>
+
+<Method name="forEachThread">
+<Abstract>1</Abstract>
+<FormalSpec>action:%String,dependentAction:%String,config:Launcher.RuntimeConfig</FormalSpec>
+</Method>
+</Class>
+</Export>

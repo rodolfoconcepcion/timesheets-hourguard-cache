@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Common.Collections.IIterable">
+<Description><![CDATA[
+<PRE>
+TD AMERITRADE CONFIDENTIAL CONTROLLED.  DO NOT COPY OR DISTRIBUTE FURTHER.  
+© 2015 Think Tech, Inc.  All rights reserved.  
+
+=======================================================================
+Description: Interface for an Iterable object.
+
+=======================================================================
+                     REVISIONS AND MODIFICATIONS
+-----------|---------|-------------------------------------------------
+03/02/2015   sno246    Genesis
+=======================================================================
+</PRE> ]]></Description>
+<Abstract>1</Abstract>
+<Super>Common.Serialization.ISerializable</Super>
+<TimeCreated>63588,54328.178554</TimeCreated>
+
+<Method name="iterator">
+<Abstract>1</Abstract>
+<ReturnType>Common.Iterator.SerializableIterator</ReturnType>
+</Method>
+
+<Method name="forEach">
+<Abstract>1</Abstract>
+<FormalSpec>action:%String</FormalSpec>
+</Method>
+
+<Method name="count">
+<Abstract>1</Abstract>
+<ReturnType>%Integer</ReturnType>
+</Method>
+</Class>
+</Export>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.Layout">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62063,67288.952399</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="Orientation">
+<Description>
+The position of the page
+Landscape</Description>
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="x:Orientation"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+</Class>
+</Export>

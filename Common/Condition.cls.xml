@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Common.Condition">
+<Description><![CDATA[
+<pre>
+TD AMERITRADE CONFIDENTIAL CONTROLLED.  DO NOT COPY OR DISTRIBUTE FURTHER.  
+© 2012 Think Tech, Inc.  All rights reserved.  
+
+03-28-2012   james.register          Created
+
+</pre>]]></Description>
+<Super>Common.Serialization.Serializable</Super>
+<TimeCreated>62524,37468.244593</TimeCreated>
+
+<Property name="Statement">
+<Type>%String</Type>
+<Private>1</Private>
+</Property>
+
+<Method name="%OnNew">
+<FormalSpec>pStatement:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	s ..Statement = pStatement
+	q $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="NewTrueCondition">
+<ClassMethod>1</ClassMethod>
+<ReturnType>Common.Condition</ReturnType>
+<Implementation><![CDATA[	q ..%New(1)
+]]></Implementation>
+</Method>
+
+<Method name="SetStatement">
+<FormalSpec>pStatement:%String</FormalSpec>
+<Implementation><![CDATA[	s ..Statement = pStatement
+]]></Implementation>
+</Method>
+
+<Method name="IsTrue">
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	if @(..Statement) {
+		q 1
+	} else {
+		q 0
+	}
+]]></Implementation>
+</Method>
+
+<Method name="IsFalse">
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	if @(..Statement) {
+		q 0
+	} else {
+		q 1
+	}
+]]></Implementation>
+</Method>
+
+<Method name="GetStatement">
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[	q ..Statement
+]]></Implementation>
+</Method>
+</Class>
+</Export>

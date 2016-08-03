@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.Alignment">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62063,39423.145426</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="Horizontal">
+<Description>
+Align horizontally
+Center,Left,Right</Description>
+<Type>%String</Type>
+<Parameter name="VALUELIST" value=",Center,Left,Right"/>
+<Parameter name="XMLNAME" value="ss:Horizontal"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Vertical">
+<Description>
+Vertical Alignment
+Top,Center,Bottom</Description>
+<Type>%String</Type>
+<Parameter name="VALUELIST" value=",Top,Center,Bottom"/>
+<Parameter name="XMLNAME" value="ss:Vertical"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="WrapText">
+<Description>
+1- if the translation of the text in a cell</Description>
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="ss:WrapText"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Rotate">
+<Description>
+text Rotation
+90</Description>
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="ss:Rotate"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+</Class>
+</Export>

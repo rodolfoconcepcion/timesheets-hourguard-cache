@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.Table">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62062,56795.374535</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="Columns">
+<Type>Excel.Column</Type>
+<Collection>array</Collection>
+<Parameter name="XMLKEYNAME" value="ss:Caption"/>
+<Parameter name="XMLNAME" value="Column"/>
+<Parameter name="XMLPROJECTION" value="XELEMENT"/>
+</Property>
+
+<Property name="Rows">
+<Type>Excel.Row</Type>
+<Collection>array</Collection>
+<Parameter name="XMLKEYNAME" value="ss:Index"/>
+<Parameter name="XMLNAME" value="Row"/>
+<Parameter name="XMLPROJECTION" value="XELEMENT"/>
+</Property>
+
+<Method name="Row">
+<Description>
+Return the necessary line</Description>
+<FormalSpec>num:%Integer</FormalSpec>
+<ReturnType>Excel.Row</ReturnType>
+<Implementation><![CDATA[
+	quit:num="" ""
+	if '..Rows.IsDefined(num)  {
+		set i1=..Rows.Count()+1
+		for i=i1:1:num {
+			do ..Rows.SetAt(##class(Excel.Row).%New(),i)
+		}
+	}
+	quit ..Rows.GetAt(num)
+]]></Implementation>
+</Method>
+
+<Method name="Column">
+<Description>
+Return the column</Description>
+<FormalSpec>num:%Integer</FormalSpec>
+<ReturnType>Excel.Column</ReturnType>
+<Implementation><![CDATA[
+	quit:num="" ""
+	if '..Columns.IsDefined(num) {
+		set i1=..Columns.Count()+1
+		for i=i1:1:num {
+			do ..Columns.SetAt(##class(Excel.Column).%New(),i)
+		}
+	}
+	quit ..Columns.GetAt(num)
+]]></Implementation>
+</Method>
+
+<Method name="Cell">
+<Description>
+Return the desired cell</Description>
+<FormalSpec>row:%Integer,col:%Integer</FormalSpec>
+<Implementation><![CDATA[	quit ..Row(row).Cell(col)
+]]></Implementation>
+</Method>
+
+<Method name="Normalize">
+<FormalSpec>debug:%Boolean</FormalSpec>
+<Implementation><![CDATA[
+	for row=1:1:..Rows.Count() {
+		for col=1:1:255	{
+			continue:'..Row(row).Cells.IsDefined(col) //cells no longer
+			set mergeleft=..Row(row).Cell(col).MergeAcross
+			set mergedown=..Row(row).Cell(col).MergeDown
+			write:debug !,"test row=",row," col=",col," left=",+mergeleft," down=",+mergedown
+			for i=0:1:mergeleft {
+				for j=0:1:mergedown	{
+					write:debug&&((i>0)||(j>0)) !,"kill row=",row+j," col=",col+i," "
+					do:(i>0)||(j>0) ..Row(row+j).KillCell(col+i,debug)
+				}
+			}
+		}
+	}
+]]></Implementation>
+</Method>
+</Class>
+</Export>

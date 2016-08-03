@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.Workbook">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>64083,33759.392579</TimeCreated>
+<Inheritance>right</Inheritance>
+<LegacyInstanceContext>1</LegacyInstanceContext>
+
+<Property name="xmlns">
+<Type>%String</Type>
+<InitialExpression>"urn:schemas-microsoft-com:office:spreadsheet"</InitialExpression>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="o">
+<Type>%String</Type>
+<InitialExpression>"urn:schemas-microsoft-com:office:office"</InitialExpression>
+<Parameter name="XMLNAME" value="xmlns:o"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="x">
+<Type>%String</Type>
+<InitialExpression>"urn:schemas-microsoft-com:office:excel"</InitialExpression>
+<Parameter name="XMLNAME" value="xmlns:x"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="ss">
+<Type>%String</Type>
+<InitialExpression>"urn:schemas-microsoft-com:office:spreadsheet"</InitialExpression>
+<Parameter name="XMLNAME" value="xmlns:ss"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="html">
+<Type>%String</Type>
+<InitialExpression>"http://www.w3.org/TR/REC-html40"</InitialExpression>
+<Parameter name="XMLNAME" value="xmlns:html"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="DocumentProperties">
+<Type>Excel.DocumentProperties</Type>
+</Property>
+
+<Property name="OfficeDocumentSettings">
+<Type>Excel.OfficeDocumentSettings</Type>
+</Property>
+
+<Property name="ExcelWorkbook">
+<Type>Excel.ExcelWorkbook</Type>
+</Property>
+
+<Property name="Indent">
+<Description>
+Indent each line</Description>
+<Type>%Boolean</Type>
+<InitialExpression>0</InitialExpression>
+<Parameter name="XMLPROJECTION" value="NONE"/>
+</Property>
+
+<Property name="Styles">
+<Description>
+Work through the method Style</Description>
+<Type>Excel.Style</Type>
+<Collection>array</Collection>
+<Parameter name="XMLKEYNAME" value="ss:ID"/>
+</Property>
+
+<Property name="Worksheets">
+<Description>
+Work through the method WorkSheet</Description>
+<Type>Excel.WorkSheet</Type>
+<Collection>array</Collection>
+<Parameter name="XMLKEYNAME" value="ss:Name"/>
+<Parameter name="XMLNAME" value="Worksheet"/>
+<Parameter name="XMLPROJECTION" value="XELEMENT"/>
+</Property>
+
+<Property name="Debug">
+<Type>%Boolean</Type>
+<InitialExpression>0</InitialExpression>
+<Parameter name="XMLPROJECTION" value="NONE"/>
+</Property>
+
+<Method name="Style">
+<Description>
+Get the style you want, if not - create</Description>
+<FormalSpec>name:%String=""</FormalSpec>
+<ReturnType>Excel.Style</ReturnType>
+<Implementation><![CDATA[
+	quit:(name="") ""
+	do:'..Styles.IsDefined(name) ..Styles.SetAt(##class(Excel.Style).%New(),name)
+	quit ..Styles.GetAt(name)
+]]></Implementation>
+</Method>
+
+<Method name="WorkSheet">
+<Description>
+Get the right list, if not - create</Description>
+<FormalSpec>name:%String=""</FormalSpec>
+<ReturnType>Excel.WorkSheet</ReturnType>
+<Implementation><![CDATA[
+	quit:(name="") ""
+	do:'..Worksheets.IsDefined(name) ..Worksheets.SetAt(##class(Excel.WorkSheet).%New(),name)
+	quit ..Worksheets.GetAt(name)
+]]></Implementation>
+</Method>
+
+<Method name="Normalize">
+<Description>
+Correction of errors, including the expansion of cross-cells
+Testing of styles and types of cells (not yet implemented)</Description>
+<Implementation><![CDATA[
+	set key=""
+	for {
+		set key=..Worksheets.Next(key)
+		quit:(key="")
+		do ..Worksheets.GetAt(key).Normalize(..Debug)
+	}
+]]></Implementation>
+</Method>
+
+<Method name="%OnNew">
+<Description>
+Create a dummy document, initialize nested objects</Description>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set ..DocumentProperties=##class(Excel.DocumentProperties).%New()
+	set ..OfficeDocumentSettings=##class(Excel.OfficeDocumentSettings).%New()
+	set ..ExcelWorkbook=##class(Excel.ExcelWorkbook).%New()
+	set ..Style("Default").Name="Normal"
+	quit $system.Status.OK()
+]]></Implementation>
+</Method>
+
+<Method name="SaveToFile">
+<FormalSpec>filename:%String</FormalSpec>
+<Implementation><![CDATA[
+	do ..Normalize()  
+	set writer=##class(%XML.Writer).%New()
+	do writer.OutputToFile(filename)
+	set writer.Indent=..Indent
+	do writer.Write("<?mso-application progid=""Excel.Sheet""?>")
+	do writer.RootObject(%this,"Workbook")
+]]></Implementation>
+</Method>
+
+<Method name="SaveToGlobal">
+<FormalSpec>location:%String</FormalSpec>
+<Implementation><![CDATA[
+	kill @location
+	do ..Normalize() 
+	set stream=##class(%GlobalCharacterStream).%New()
+	do stream.%LocationSet(location)
+	do stream.Clear()
+
+	set writer=##class(%XML.Writer).%New()
+	#;set writer.Charset="windows-1251"
+	do writer.OutputToStream(stream)
+	do writer.Write("<?mso-application progid=""Excel.Sheet""?>")
+	do writer.RootObject(%this,"Workbook")
+
+	do stream.%Save()
+]]></Implementation>
+</Method>
+
+<Method name="import">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>fileName:%String="C:\Temp\timesheet_test.xlsx.xml"</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set sc = $System.Status.OK()
+	try {
+		set reader = ##class(%XML.Reader).%New()
+		$$$THROWONERROR(sc,reader.OpenFile(fileName))
+
+		do reader.Correlate("Workbook","Excel.Workbook")
+		do reader.Next(.workbook,.sc)
+		
+		#if 0
+		/*
+		do reader.Correlate("DocumentProperties","Excel.DocumentProperties")
+		do reader.Next(.documentProperties,.sc)
+
+		do reader.Correlate("ExcelWorkbook","Excel.ExcelWorkbook")
+		do reader.Next(.excelWorkbook,.sc)
+
+		do reader.Correlate("Styles","Excel.Style")
+		do reader.Next(.styles,.sc)
+
+		do reader.Correlate("Worksheet","Excel.Worksheet")
+		do reader.Next(.worksheet,.sc)
+		*/
+		#endif
+	} catch e {
+		set sc = e.AsStatus()
+	}
+	return sc
+]]></Implementation>
+</Method>
+</Class>
+</Export>

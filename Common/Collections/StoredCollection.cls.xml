@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Common.Collections.StoredCollection">
+<Description><![CDATA[
+<PRE>
+TD AMERITRADE CONFIDENTIAL CONTROLLED.  DO NOT COPY OR DISTRIBUTE FURTHER.  
+© 2015 Think Tech, Inc.  All rights reserved.  
+
+=======================================================================
+Description: Stored collection object which decorates an iterator with a filter and/or map.
+
+=======================================================================
+                     REVISIONS AND MODIFICATIONS
+-----------|---------|-------------------------------------------------
+03/02/2015   sno246    Genesis
+=======================================================================
+</PRE> ]]></Description>
+<Super>Common.Iterator.SerializableIterator,Common.Iterator.DecoratedIterator,Common.Collections.IThreadable</Super>
+<TimeCreated>63589,36246.182113</TimeCreated>
+
+<Property name="CurrentElement">
+<Type>%String</Type>
+<Private>1</Private>
+</Property>
+
+<Property name="NextElement">
+<Type>%String</Type>
+<Private>1</Private>
+</Property>
+
+<Property name="AtEnd">
+<Type>%Boolean</Type>
+<InitialExpression>1</InitialExpression>
+<Private>1</Private>
+</Property>
+
+<Property name="Filter">
+<Type>Common.Collections.Predicate</Type>
+<Private>1</Private>
+</Property>
+
+<Property name="Map">
+<Type>Common.Collections.Function</Type>
+<Private>1</Private>
+</Property>
+
+<Property name="ApplyFilter">
+<Type>%Boolean</Type>
+<InitialExpression>1</InitialExpression>
+<Private>1</Private>
+</Property>
+
+<Property name="ApplyMap">
+<Type>%Boolean</Type>
+<InitialExpression>1</InitialExpression>
+<Private>1</Private>
+</Property>
+
+<Property name="LazyFetch">
+<Type>%Boolean</Type>
+<InitialExpression>0</InitialExpression>
+<Private>1</Private>
+</Property>
+
+<Parameter name="ChildJobWrapper">
+<Type>%String</Type>
+<Default>##class(Common.Collections.ThreadedConsumer).acceptThread</Default>
+</Parameter>
+
+<Parameter name="DependentJobWrapper">
+<Type>%String</Type>
+<Default>##class(Common.Collections.ThreadedConsumer).acceptDependent</Default>
+</Parameter>
+
+<Method name="%OnNew">
+<FormalSpec>iterator:Common.Iterator.SerializableIterator=$$$NULLOREF,filter:%String="",map:%String=""</FormalSpec>
+<Private>1</Private>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	d:$isobject(iterator) ..SetIterator(iterator.%ConstructClone(1))
+	s:filter'="" ..Filter=##class(Common.Collections.Predicate).%New(filter)
+	s:map'="" ..Map=##class(Common.Collections.Function).%New(map)
+	q $System.Status.OK()
+]]></Implementation>
+</Method>
+
+<Method name="GetNext">
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	q:'..HasNext() ""
+	s ..CurrentElement = ..NextElement
+	s ..LazyFetch=1
+	q ..CurrentElement
+]]></Implementation>
+</Method>
+
+<Method name="HasNext">
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	d:..LazyFetch ..iterate()
+	q '..AtEnd
+]]></Implementation>
+</Method>
+
+<Method name="SetPosition">
+<FormalSpec>element:%String=""</FormalSpec>
+<Implementation><![CDATA[
+	d ..Iterator.SetPosition(element)
+	s ..CurrentElement = element
+	s ..LazyFetch=1
+]]></Implementation>
+</Method>
+
+<Method name="OnSetIterator">
+<Private>1</Private>
+<Implementation><![CDATA[	s ..LazyFetch=1
+]]></Implementation>
+</Method>
+
+<Method name="setApplyFilter">
+<FormalSpec>set:%Boolean=1</FormalSpec>
+<Implementation><![CDATA[
+	s ..ApplyFilter=set	
+	i $classname(..Iterator)=..%ClassName(1) {
+		d ..Iterator.setApplyFilter(set)	
+	}
+]]></Implementation>
+</Method>
+
+<Method name="setApplyMap">
+<FormalSpec>set:%Boolean=1</FormalSpec>
+<Implementation><![CDATA[
+	s ..ApplyMap=set	
+	i $classname(..Iterator)=..%ClassName(1) {
+		d ..Iterator.setApplyMap(set)	
+	}
+]]></Implementation>
+</Method>
+
+<Method name="applyFilter">
+<Description>
+Applies an input to the Filter and returns the Boolean result.
+It will also pass back the mapped output by reference.</Description>
+<FormalSpec><![CDATA[in:%String="",&out:%String]]></FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	s pass=1,out=in
+	i $classname(..Iterator)=..%ClassName(1) {
+		s pass=..Iterator.applyFilter(in,.out)	
+	}
+	s pass=pass && ('$isobject(..Filter) || ..Filter.test(out))
+	s:pass out=$s($isobject(..Map):..Map.apply(out),1:out)
+	q pass
+]]></Implementation>
+</Method>
+
+<Method name="applyMap">
+<Description>
+Applies an input to the Map and returns the mapped result.</Description>
+<FormalSpec>element:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	i $classname(..Iterator)=..%ClassName(1) {
+		s element=..Iterator.applyMap(element)
+	}		
+	q $s($isobject(..Map):..Map.apply(element),1:element)
+]]></Implementation>
+</Method>
+
+<Method name="iterate">
+<Description>
+Sets the next element.</Description>
+<Private>1</Private>
+<Implementation><![CDATA[
+	try {
+		s ..AtEnd=1, ..LazyFetch=0
+	    while (..Iterator.HasNext()) {
+             s ..NextElement=..Iterator.GetNext()
+             i ('..ApplyFilter || '$isobject(..Filter) || ..Filter.test(..NextElement)) {    
+                 s:(..ApplyMap && $isobject(..Map)) ..NextElement=..Map.apply(..NextElement)
+                 s ..AtEnd=0
+                 q
+             }        
+         }			
+	} catch ex {
+		s $ze=ex.DisplayString()
+		d BACK^%ETN
+	}
+]]></Implementation>
+</Method>
+
+<Method name="filter">
+<Description>
+Returns a new filtered StoredCollection.</Description>
+<FormalSpec>filter:%String</FormalSpec>
+<ReturnType>Common.Collections.StoredCollection</ReturnType>
+<Implementation><![CDATA[	q ##class(Common.Collections.StoredCollection).%New(##this,filter)
+]]></Implementation>
+</Method>
+
+<Method name="map">
+<Description>
+Returns a new mapped StoredCollection.</Description>
+<FormalSpec>map:%String</FormalSpec>
+<ReturnType>Common.Collections.StoredCollection</ReturnType>
+<Implementation><![CDATA[	q ##class(Common.Collections.StoredCollection).%New(##this,,map)
+]]></Implementation>
+</Method>
+
+<Method name="iterator">
+<Description>
+Returns a new iterator for this collection.</Description>
+<ReturnType>Common.Collections.StoredCollection</ReturnType>
+<Implementation><![CDATA[	q ..%ConstructClone(1)
+]]></Implementation>
+</Method>
+
+<Method name="threadableIterator">
+<Description>
+Returns a new iterator for this collection, with all filters and maps disabled.</Description>
+<ReturnType>Common.Collections.StoredCollection</ReturnType>
+<Implementation><![CDATA[
+	s iterator=..iterator()
+	d iterator.SetPosition("")
+	d iterator.setApplyFilter(0)
+	d iterator.setApplyMap(0)
+	q iterator
+]]></Implementation>
+</Method>
+
+<Method name="bundleLauncher">
+<Description>
+Returns a new BundleLauncher object with child and dependent jobs.</Description>
+<FormalSpec>childJob:%String="",dependentJob:%String="",config:Launcher.RuntimeConfig=##class(Launcher.RuntimeConfig).%New()</FormalSpec>
+<ReturnType>Launcher.BundleLauncher</ReturnType>
+<Implementation><![CDATA[
+	d:config.GetProgramName()="" config.SetProgramName(..%ClassName(1))
+	s bundleFactory = ##class(Launcher.StoredCollectionBundleFactory).%New()
+	s builder = ##class(Launcher.BundleBuilder).%New(..threadableIterator(),bundleFactory)
+	d builder.SetBundleSize($g(^BZ(config.GetProgramName(),"Records Per Bundle"),100000))
+	s bundleLauncher = ##class(Launcher.BundleLauncherCreator).CreateFromBuilder(builder)
+	d bundleLauncher.SetRuntimeConfig(config)
+	d bundleLauncher.SetChildJob(childJob)
+	d bundleLauncher.SetDependentJob(dependentJob)
+	q bundleLauncher
+]]></Implementation>
+</Method>
+
+<Method name="forEach">
+<Description>
+Applies an action to each element of the collection.</Description>
+<FormalSpec>action:%String=""</FormalSpec>
+<Implementation><![CDATA[
+	s current=..CurrentElement
+	d ..SetPosition("")
+	s consumer=##class(Common.Collections.Consumer).%New(action)
+	while (..HasNext()) {
+		d consumer.accept(..GetNext())
+	}
+	d ..SetPosition(current)
+]]></Implementation>
+</Method>
+
+<Method name="forEachThread">
+<Description>
+Applies an action to each element of the collection via threads.</Description>
+<FormalSpec>threadedConsumer:%String="",dependentConsumer:%String="",config:Launcher.RuntimeConfig=##class(Launcher.RuntimeConfig).%New()</FormalSpec>
+<Implementation><![CDATA[
+	d config.SetProgramName(threadedConsumer)
+	d config.SetProperty("threadedConsumer",threadedConsumer)
+	d config.SetProperty("dependentConsumer",dependentConsumer)
+	s child=$s(threadedConsumer'="":..#ChildJobWrapper,1:"")
+	s dependent=$s(dependentConsumer'="":..#DependentJobWrapper,1:"")
+	d ..bundleLauncher(child,dependent,config).LaunchAllJobs()
+]]></Implementation>
+</Method>
+
+<Method name="count">
+<Description>
+Returns the number of elements in the collection.</Description>
+<ReturnType>%Integer</ReturnType>
+<Implementation><![CDATA[
+	s %count=0
+	d ..forEach("s %count=$i(%count)")
+	q %count
+]]></Implementation>
+</Method>
+</Class>
+</Export>

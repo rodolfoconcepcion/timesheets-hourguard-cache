@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.DocumentProperties">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62062,50297.657323</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Parameter name="TIMEZONE">
+<Description>
+$ZTIMEZONE VALUE FOR CENTRAL STD TIME = 6 * 60 = 360</Description>
+<Default>360</Default>
+</Parameter>
+
+<Property name="xmlns">
+<Type>%String</Type>
+<InitialExpression>"urn:schemas-microsoft-com:office:office"</InitialExpression>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Author">
+<Type>%String</Type>
+<InitialExpression>"Concepcion, Rodolfo"</InitialExpression>
+</Property>
+
+<Property name="LastAuthor">
+<Type>%String</Type>
+<InitialExpression>"Concepcion, Rodolfo"</InitialExpression>
+</Property>
+
+<Property name="Created">
+<Description>
+i.e: 2016-03-14T15:54:01Z</Description>
+<Type>%String</Type>
+<InitialExpression>$zdatetime($now(..#TIMEZONE),3,7)</InitialExpression>
+</Property>
+
+<Property name="LastSaved">
+<Description>
+i.e: 2016-03-14T15:54:01Z</Description>
+<Type>%String</Type>
+<InitialExpression>$zdatetime($now(..#TIMEZONE),3,7)</InitialExpression>
+</Property>
+
+<Property name="Version">
+<Type>%String</Type>
+<InitialExpression>"14.00"</InitialExpression>
+</Property>
+</Class>
+</Export>

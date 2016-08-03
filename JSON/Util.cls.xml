@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="JSON.Util">
+<Description>
+Original code from Yonatan http://blog.yonatan.me/2010/03/objectscript-json-decoderencoder.html</Description>
+<Super>%String</Super>
+<TimeCreated>64023,41775.934969</TimeCreated>
+
+<UDLText name="T">
+<Content><![CDATA[
+/*
+		Original Code By: Yonatan
+		Date: 03/14/2010
+		Version: 1.0
+		
+		Modified by: Dan McCracken
+		Date: 10/27/2011
+		Version 1.1
+		Description: Added method for encoding a simple cache object, containing simple datatypes.
+					 Added method to return an object as an %ArrayOfDataTypes as a helper when creating a %ListOfDataTypes,
+					 	containing an array of objects to be encoded.
+					 Fixed a bug that allowed %String property types to be unescaped when they qualified for $ISVALIDNUM()
+					 	Strings containing a period character need to be escaped with quotes.
+					 Added classmethod to return an object loaded with the properties from an encoded JSON string.
+			
+		Modified by: Yuval Golan
+		Date: 12/17/2014
+		Version 1.2
+		Description: Fixed a bug that allowed %String property types to be unescaped when they qualified for $ISVALIDNUM()
+										For example strings containing only numeric characters that start with zero (i.e. "0123") and strings
+																that start with a plus sign and then numeric characters (i.e. "+123").
+								 Fixed a bug that returned inner objects as %ArrayOfDataTypes instead of there class type.
+*/
+]]></Content>
+</UDLText>
+
+<Parameter name="EscapeChar">
+<Type>COSEXPRESSION</Type>
+<Default>$LB($LB("\","\\"),$LB($C(13),"\n"),$LB($C(10),"\r"),$LB($C(9),"\t"),$LB("""","\"""),$LB($C(8),"\b"),$LB($C(12),"\f"))</Default>
+</Parameter>
+
+<Parameter name="UnEscapeChar">
+<Type>COSEXPRESSION</Type>
+<Default>$LB("\\","\n","\r","\t","\""","\b","\f")</Default>
+</Parameter>
+
+<Parameter name="JSonSlice">
+<Final>1</Final>
+<Internal>1</Internal>
+<Default>1</Default>
+</Parameter>
+
+<Parameter name="JSonInString">
+<Final>1</Final>
+<Internal>1</Internal>
+<Default>2</Default>
+</Parameter>
+
+<Parameter name="JSonInArray">
+<Final>1</Final>
+<Internal>1</Internal>
+<Default>3</Default>
+</Parameter>
+
+<Parameter name="JSonInObject">
+<Final>1</Final>
+<Internal>1</Internal>
+<Default>4</Default>
+</Parameter>
+
+<Method name="GetEscapeChars">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[	quit ..#EscapeChar
+]]></Implementation>
+</Method>
+
+<Method name="SetAux">
+<Internal>1</Internal>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>what:%String,where:%Integer,delim:%String</FormalSpec>
+<ReturnType>%DataType</ReturnType>
+<Implementation><![CDATA[
+	set aux=##class(%ArrayOfDataTypes).%New() 
+	do aux.SetAt(what,"what")
+	do aux.SetAt(where,"where") 
+	do aux.SetAt(delim,"delim")
+ 
+	quit aux
+]]></Implementation>
+</Method>
+
+<Method name="isEscaped">
+<Description>
+we know that it's not escaped becase there is _not_ an
+odd number of backslashes at the end of the string so far</Description>
+<Internal>1</Internal>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>str:%String,c:%String</FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	set pos=$find(str,c)
+	quit ($length($extract(str,1,pos))-$length($replace($extract(str,1,pos),"\","")))#2=1
+]]></Implementation>
+</Method>
+
+<Method name="Escape">
+<Description>
+Escapes the string. </Description>
+<Internal>1</Internal>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>str:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	for tI=1:1:$listlength(..#EscapeChar) { 
+		set tCharPair=$listget(..#EscapeChar,tI)
+		set str=$replace(str,$listget(tCharPair,1),$listget(tCharPair,2))
+	}
+	quit str
+]]></Implementation>
+</Method>
+
+<Method name="Unescape">
+<Internal>1</Internal>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>str:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	for tI=1:1:$length(str){
+		set tChar=$listfind(..#UnEscapeChar,$extract(str,tI,tI+1))
+		if (tChar>0){
+			set $extract(str,tI,tI+1)=$listget($listget(..#EscapeChar,tChar),1)
+		}
+	}
+	quit str
+]]></Implementation>
+</Method>
+
+<Method name="Decode">
+<Description>
+Decode a string JSON. </Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>str:%String</FormalSpec>
+<ReturnType>%ArrayOfDataTypes</ReturnType>
+<Implementation><![CDATA[
+	#dim stack as %ListOfDataTypes
+	set matchType=$zconvert(str,"L")
+ 
+	quit:(matchType="true") "1"
+	quit:(matchType="false") "0"
+	quit:(matchType="null") ""	
+	quit:($isvalidnum(matchType)) matchType 
+	quit:str?1"""".E1"""" ..Unescape($extract(str,2,$length(str)-1))
+	//$replace($e(str,2,$l(str)-1),"\""","""")
+ 
+	// array or object notation
+	set match=str?1(1"[".E1"]",1"{".E1"}")
+	set stack=##class(%ListOfDataTypes).%New()
+ 
+	if match {
+		if $extract(str,1)="[" {
+			do stack.Insert(..#JSonInArray)
+			set arr=##class(%ListOfDataTypes).%New()
+		}	
+		else {
+			do stack.Insert(..#JSonInObject) 
+			set obj=##class(%ArrayOfDataTypes).%New()
+		}
+	 
+		do stack.Insert(..SetAux(..#JSonSlice,1,"false"))
+	 
+		set chars=$extract(str,2,$length(str)-1)
+	 
+		if chars="" {
+			if stack.GetAt(1)=..#JSonInArray {
+				quit arr
+			}
+			else {
+				quit obj
+			}	
+		}
+
+		set strlenChars=$length(chars)+1
+
+		set escaped=0
+		for c=1:1:strlenChars {
+			set last=stack.Count()
+			set top=stack.GetAt(last)
+		 
+			set:(escaped=2) escaped=0
+			set:(escaped=1) escaped=2
+		 
+			set substrC2=$extract(chars,c-1,c)
+			if ($extract(chars,c,c)="\")&&(escaped=0) set escaped=1
+			
+			if $extract(chars,c)="" {
+				set a=22
+			}
+		 
+			if (c=strlenChars || ($extract(chars,c)=",")) && (top.GetAt("what")=..#JSonSlice) {
+				// found a comma that is not inside a string, array, etc.,
+				// OR we've reached the end of the character list
+				set slice = $extract(chars, top.GetAt("where"),c-1)
+				do stack.Insert(..SetAux(..#JSonSlice,c+1,"false"))
+				if stack.GetAt(1)=..#JSonInArray {
+					// we are in an array, so just push an element onto the stack
+					do arr.Insert(..Decode(slice)) 
+				}
+				elseif stack.GetAt(1)=..#JSonInObject {
+					// we are in an object, so figure
+					// out the property name and set an
+					// element in an associative array,
+					// for now 
+									 
+					set match=slice?." "1""""1.E1""""." "1":"1.E
+					if match {
+						//'name':value par
+						set key1=$piece(slice,":")
+						set key=..Decode(key1)
+
+						set val=..Decode($piece(slice,":",2,$length(slice,":"))) 
+						do obj.SetAt(val, key)
+										
+					}
+				}
+			}
+			elseif $extract(chars,c)="""" && (top.GetAt("what")'=..#JSonInString) {
+				// found a quote, and we are not inside a string
+				do stack.Insert(..SetAux(..#JSonInString,c,$extract(chars,c)))
+			}
+			elseif $extract(chars,c)=top.GetAt("delim") && (top.GetAt("what")=..#JSonInString) && (escaped=0) {
+				// found a quote, we're in a string, and it's not escaped (look 3 charachters behind, to see the \" is not \\" )
+				set last=stack.Count()
+				set st=stack.RemoveAt(last)
+			}
+			elseif ($extract(chars,c)="[") && (top.GetAt("what")'=..#JSonInString) && ($case(top.GetAt("what"),..#JSonInString:1,..#JSonInArray:1,..#JSonSlice:1,:0)) { 
+				// found a left-bracket, and we are in an array, object, or slice
+				do stack.Insert(..SetAux(..#JSonInArray,c,"false"))
+			}
+			elseif $extract(chars,c)="]" && (top.GetAt("what")=..#JSonInArray) {
+				// found a right-bracket, and we're in an array
+				set last=stack.Count()
+				set st=stack.RemoveAt(last) 
+			}
+			;modificacio 19/11/08: ..#JSonString -> #JSonInArray
+			elseif $extract(chars,c)="{" && ($case(top.GetAt("what"),..#JSonSlice:1,..#JSonInArray:1,..#JSonInObject:1,:0)) {
+				// found a left-brace, and we are in an array, object, or slice
+				do stack.Insert(..SetAux(..#JSonInObject,c,"false"))
+			}
+			elseif $extract(chars,c)="}" && (top.GetAt("what")=..#JSonInObject) {
+				// found a right-brace, and we're in an object 
+				set last=stack.Count()
+				set st=stack.RemoveAt(last) 
+			}
+		 
+		}	
+	 
+		if stack.GetAt(1)=..#JSonInObject {
+			quit obj
+		}
+		elseif stack.GetAt(1)=..#JSonInArray {
+			quit arr
+		}
+	}
+	quit str
+]]></Implementation>
+</Method>
+
+<Method name="Encode">
+<Description>
+Encode a Cache string to a JSON string</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>data:%DataType</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	if $isobject(data) {
+		set key=""
+		set typeData=data.%ClassName()
+
+		if typeData="%ArrayOfDataTypes" {
+			//type object
+			set key=""
+			set cad=""
+			for {
+				set pData=data.GetNext(.key)
+				quit:key=""
+				set value=..Encode(pData)
+				set cad=$select(cad'="":cad_",",1:"")_""""_..Escape(key)_""":"_value
+			}
+			quit "{"_cad_"}"
+		} elseif typeData="%ListOfDataTypes" {
+			//type array 
+			set cad=""
+			for i=1:1:data.Count() {
+				set tmp=..Encode(data.GetAt(i))
+				set cad=$select(i>1:cad_",",1:"")_tmp
+			}
+		 
+			set cad="["_cad_"]"
+			quit cad
+		}
+	} elseif ($find(data,".")) {
+		//Valid numbers that start with period (ie. .1293394) should be escaped like a string.
+		//type string
+		quit """"_..Escape(data)_""""
+	}
+	elseif (+data=data) {
+		//If it's a numeric value then return the value as is.
+		//type number
+		quit data
+		
+	}
+	else {
+		//type string
+		quit:data="" "null"
+		quit """"_..Escape(data)_""""
+	}
+]]></Implementation>
+</Method>
+
+<Method name="CreateStringPair">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pKey:%String,pValue:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[	quit """"_pKey_""":"""_..Escape(pValue)_""""
+]]></Implementation>
+</Method>
+
+<Method name="Parse">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pStr:JSON.Util</FormalSpec>
+<ReturnType>%ArrayOfDataTypes</ReturnType>
+<Implementation><![CDATA[	quit ##class(JSON.Util).Decode(pStr)
+]]></Implementation>
+</Method>
+
+<Method name="Stringify">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pData:%DataType</FormalSpec>
+<ReturnType>JSON.Util</ReturnType>
+<Implementation><![CDATA[	quit ##class(JSON.Util).Encode(pData)
+]]></Implementation>
+</Method>
+
+<Method name="GetJSONFromObject">
+<Description><![CDATA[
+Return an encoded JSON string of the object.<br>
+Uses all object properties that do not start with a % char.]]></Description>
+<CodeMode>objectgenerator</CodeMode>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	// Only create this method when compiling other classes this is extended upon
+	if (%compiledclass.Name '= "Spectrum.Util.JSON.Util") {
+		
+		// Wrap the object in an array
+		do %code.WriteLine(" Set array = ##class(%ArrayOfDataTypes).%New()")
+	
+		// Rip through each property of the class.. that does not start with a %
+		// Insert each property as a key=>value pair in the array
+		for i = 1:1:%compiledclass.Properties.Count() {
+					set prop = %compiledclass.Properties.GetAt(i).Name
+					if ($extract(prop) '= "%") {
+						do %code.WriteLine(" Do array.SetAt(.."_prop_","""_prop_""")")
+					}
+			}
+		
+			// Return an encoded JSON string of the object
+			do %code.WriteLine(" Quit ..Encode(array)")
+	}
+]]></Implementation>
+</Method>
+
+<Method name="GetAsArrayOfDataTypes">
+<Description><![CDATA[
+Returns the object as an %ArrayOfDataTypes key=>value pair set.
+This is helpful when trying to return a %ListOfDataTypes in JSON form, by quickly building an array object to Insert.
+Uses all object properties that do not start with a % char.]]></Description>
+<CodeMode>objectgenerator</CodeMode>
+<ReturnType>%ArrayOfDataTypes</ReturnType>
+<Implementation><![CDATA[
+	// Only create this method when compiling other classes this is extended upon
+	if (%compiledclass.Name '= "Spectrum.Util.JSON.Util") {
+		
+		// Wrap the object in an array
+		do %code.WriteLine(" Set array = ##class(%ArrayOfDataTypes).%New()")
+	
+		// Rip through each property of the class.. that does not start with a %
+		// Insert each property as a key=>value pair in the array
+		for i = 1:1:%compiledclass.Properties.Count() {
+					set prop = %compiledclass.Properties.GetAt(i).Name
+					if ($extract(prop) '= "%") {
+						do %code.WriteLine(" Do array.SetAt(.."_prop_","""_prop_""")")
+					}
+			}
+		
+			// Return an %ArrayOfDataTypes representation of the object
+			do %code.WriteLine(" Quit array")
+	}
+]]></Implementation>
+</Method>
+
+<Method name="GetObjectFromJSON">
+<Description>
+Returns an OREF populated with the values from the JSON
+Uses all object properties that do not start with a % char.</Description>
+<ClassMethod>1</ClassMethod>
+<CodeMode>objectgenerator</CodeMode>
+<FormalSpec>JSON:%String</FormalSpec>
+<ReturnType>%RegisteredObject</ReturnType>
+<Implementation><![CDATA[
+	// Only create this method when compiling other classes this is extended upon
+	if (%compiledclass.Name '= "Spectrum.Util.JSON.Util") {
+		do %code.WriteLine(" Set return = ##class("_%compiledclass.Name_").%New()")
+	
+		do %code.WriteLine(" Set myDecodedArray = ..Decode(JSON)")
+		
+		// Rip through each property of the class.. that does not start with a %
+		// Insert each property into the object to return
+		#dim prop As %Dictionary.CompiledProperty
+		for i = 1:1:%compiledclass.Properties.Count() {
+					set prop = %compiledclass.Properties.GetAt(i)
+					set propName=prop.Name
+					if ($extract(propName) '= "%") {
+						set propType=prop.Type
+						set propTypeClass="" if propType'="" set propTypeClass=##class(%Dictionary.CompiledClass).%OpenId(propType)
+						set isOBJ=0 if $isobject(propTypeClass),propTypeClass.ClassType'="datatype" set isOBJ=1
+						//Do %code.WriteLine(" Do array.SetAt(.."_prop_","""_prop_""")")
+						if (isOBJ) {
+							do %code.Write(" set strJSON = ..Encode(myDecodedArray.GetAt("""_propName_"""))")
+							do %code.WriteLine(" // As "_propType_" (class)")
+							do %code.WriteLine(" Set return."_propName_" = ##class("_propType_").GetObjectFromJSON(strJSON)")
+						}
+						else {
+							do %code.Write(" Set return."_propName_" = myDecodedArray.GetAt("""_propName_""")")
+							do %code.WriteLine(" // As "_propType_" (datatype)")
+						}
+					}
+			}
+			
+		do %code.WriteLine(" Quit return")
+	}
+]]></Implementation>
+</Method>
+</Class>
+</Export>

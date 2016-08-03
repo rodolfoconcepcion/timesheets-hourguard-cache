@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.ExcelWorkbook">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62062,50887.217562</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="xmlns">
+<Type>%String</Type>
+<InitialExpression>"urn:schemas-microsoft-com:office:excel"</InitialExpression>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="WindowHeight">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="WindowWidth">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="WindowTopX">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="WindowTopY">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="ProtectStructure">
+<Type>%String</Type>
+<InitialExpression>"False"</InitialExpression>
+</Property>
+
+<Property name="ProtectWindows">
+<Type>%String</Type>
+<InitialExpression>"False"</InitialExpression>
+</Property>
+
+<Property name="DisplaySmartTags">
+<Type>%String</Type>
+<InitialExpression>"None"</InitialExpression>
+</Property>
+
+<Property name="RefModeR1C1">
+<Type>%String</Type>
+<Parameter name="XMLPROJECTION" value="ELEMENT"/>
+</Property>
+</Class>
+</Export>

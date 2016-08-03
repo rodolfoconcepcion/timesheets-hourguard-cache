@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Common.Collections.Predicate">
+<Description><![CDATA[
+<PRE>
+TD AMERITRADE CONFIDENTIAL CONTROLLED.  DO NOT COPY OR DISTRIBUTE FURTHER.  
+© 2015 Think Tech, Inc.  All rights reserved.  
+
+=======================================================================
+Description: Serializable predicate function which tests an input against an executable string.
+
+=======================================================================
+                     REVISIONS AND MODIFICATIONS
+-----------|---------|-------------------------------------------------
+03/02/2015   sno246    Genesis
+=======================================================================
+</PRE> ]]></Description>
+<IncludeCode>%occErrors</IncludeCode>
+<Super>Lib.Function.IPredicate,Common.Serialization.Serializable</Super>
+<TimeCreated>63588,53649.784586</TimeCreated>
+
+<Property name="Filter">
+<Type>%String</Type>
+<Private>1</Private>
+</Property>
+
+<Method name="%OnNew">
+<FormalSpec>filter:%String="1"</FormalSpec>
+<Private>1</Private>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	s ..Filter=$s(filter="":"1",1:filter)
+	q ..validateFilter()
+]]></Implementation>
+</Method>
+
+<Method name="and">
+<Description>
+Returns a new Predicate that logically ANDs a new filter with this Filter.</Description>
+<FormalSpec>other:%String="1"</FormalSpec>
+<ReturnType>Lib.Function.IPredicate</ReturnType>
+<Implementation><![CDATA[	q ##class(Common.Collections.Predicate).%New("(("_..Filter_") && ("_other_"))")
+]]></Implementation>
+</Method>
+
+<Method name="negate">
+<Description>
+Returns a new Predicate with the logical negation this Filter.</Description>
+<ReturnType>Lib.Function.IPredicate</ReturnType>
+<Implementation><![CDATA[	q ##class(Common.Collections.Predicate).%New("'("_..Filter_")")
+]]></Implementation>
+</Method>
+
+<Method name="or">
+<Description>
+Returns a new Predicate that logically ORs a new filter with this Filter.</Description>
+<FormalSpec>other:%String="1"</FormalSpec>
+<ReturnType>Lib.Function.IPredicate</ReturnType>
+<Implementation><![CDATA[	q ##class(Common.Collections.Predicate).%New("(("_..Filter_") || ("_other_"))")
+]]></Implementation>
+</Method>
+
+<Method name="test">
+<Description>
+Applies an input to this Filter and returns the Boolean result.</Description>
+<FormalSpec>input:%String</FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[	q ''$xecute("(input) q "_$replace(..Filter,"?","input"),input)
+]]></Implementation>
+</Method>
+
+<Method name="validateFilter">
+<Description>
+Validates the Filter as an executable string.</Description>
+<Implementation><![CDATA[
+	s cmd=" q "_$replace(..Filter,"?","input")
+	q $s(##class(%Library.Routine).CheckSyntax(cmd,.err):$System.Status.OK(),1:$System.Status.Error($$$GeneralError,$g(err(1))_"~"_cmd))
+]]></Implementation>
+</Method>
+</Class>
+</Export>

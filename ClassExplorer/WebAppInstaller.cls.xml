@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="ClassExplorer.WebAppInstaller">
+<Super>%Projection.AbstractProjection</Super>
+<TimeCreated>63696,64041.85537</TimeCreated>
+
+<Parameter name="Name">
+<Default>/ClassExplorer</Default>
+</Parameter>
+
+<Parameter name="DispatchClass">
+<Default>ClassExplorer.Router</Default>
+</Parameter>
+
+<Projection name="Reference">
+<Type>WebAppInstaller</Type>
+</Projection>
+
+<Method name="CreateProjection">
+<Description>
+This method is invoked when a class is compiled.</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[cls:%String,&params]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set properties("NameSpace") = $Namespace
+    set properties("Description") = "A WEB application for Cache UML Explorer."
+    set properties("IsNameSpaceDefault") = $$$YES
+    set properties("DispatchClass") = ..#DispatchClass
+	
+    new $Namespace
+    set $Namespace = "%SYS"
+    do ##class(Security.System).GetInstallationSecuritySetting(.security)
+    if (security="None") {
+        set properties("AutheEnabled") = $$$AutheUnauthenticated
+    } else {
+        set properties("AutheEnabled") = $$$AutheCache
+    } 
+
+    if ('##class(Security.Applications).Exists(..#Name)) {
+        write !, "Creating WEB application " _ ..#Name _ "..."
+        set st = ##class(Security.Applications).Create(..#Name, .properties)
+        write !, "WEB application " _ ..#Name _ " created."
+    } else {
+	    set st = $$$OK
+        write !, "WEB application " _ ..#Name _ " already exists, so it is ready to use."
+    }
+    quit st
+]]></Implementation>
+</Method>
+
+<Method name="RemoveProjection">
+<Description>
+This method is invoked when a class is 'uncompiled'.</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[cls:%String,&params,recompile:%Boolean]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    new $Namespace
+    set $Namespace = "%SYS"
+    set st = $$$OK
+    if (##class(Security.Applications).Exists(..#Name)) {
+        write !, "Deleting WEB application " _ ..#Name _"..."
+        set st = ##class(Security.Applications).Delete(..#Name)
+        write !, "WEB application " _ ..#Name _ " was successfully removed."
+    }
+    quit st
+]]></Implementation>
+</Method>
+</Class>
+</Export>

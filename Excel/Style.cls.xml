@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.Style">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62062,51403.187035</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="Name">
+<Description><![CDATA[
+Style name, arbitrarily <br>
+But definitely has a style Default <br>]]></Description>
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="ss:Name"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Alignment">
+<Description>
+The object that holds the alignment properties</Description>
+<Type>Excel.Alignment</Type>
+</Property>
+
+<Property name="Borders">
+<Description>
+array boundaries</Description>
+<Type>Excel.Border</Type>
+<Collection>array</Collection>
+<Parameter name="XMLKEYNAME" value="ss:Position"/>
+</Property>
+
+<Property name="Font">
+<Description>
+Fonts </Description>
+<Type>Excel.Font</Type>
+</Property>
+
+<Property name="Interior">
+<Type>Excel.Interior</Type>
+</Property>
+
+<Property name="Format">
+<Description><![CDATA[
+Data format for the job. actually stored NumberFormat <br>
+dd/mm/yyyy<br>
+#,##0.00<br>
+Short Date<br>]]></Description>
+<Type>%String</Type>
+<Calculated>1</Calculated>
+<Parameter name="XMLPROJECTION" value="NONE"/>
+</Property>
+
+<Property name="Protection">
+<Type>%String</Type>
+</Property>
+
+<Method name="FormatGet">
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[	quit ..NumberFormat.Format
+]]></Implementation>
+</Method>
+
+<Method name="FormatSet">
+<FormalSpec>value:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set:..NumberFormat="" ..NumberFormat=##class(Excel.NumberFormat).%New()
+	set ..NumberFormat.Format=value
+	quit $system.Status.OK()
+]]></Implementation>
+</Method>
+
+<Property name="NumberFormat">
+<Description>
+The format of the numeric data storage</Description>
+<Type>Excel.NumberFormat</Type>
+</Property>
+
+<Property name="BorderLeft">
+<Description>
+The left boundary</Description>
+<Type>Excel.Border</Type>
+<Calculated>1</Calculated>
+<Parameter name="XMLPROJECTION" value="NONE"/>
+</Property>
+
+<Property name="BorderRight">
+<Description>
+right border</Description>
+<Type>Excel.Border</Type>
+<Calculated>1</Calculated>
+<Parameter name="XMLPROJECTION" value="NONE"/>
+</Property>
+
+<Property name="BorderTop">
+<Description>
+Upper limit</Description>
+<Type>Excel.Border</Type>
+<Calculated>1</Calculated>
+<Parameter name="XMLPROJECTION" value="NONE"/>
+</Property>
+
+<Property name="BorderBottom">
+<Description>
+Bottom line</Description>
+<Type>Excel.Border</Type>
+<Calculated>1</Calculated>
+<Parameter name="XMLPROJECTION" value="NONE"/>
+</Property>
+
+<Method name="Border">
+<Description>
+Appeal to the border, if necessary, its creation</Description>
+<FormalSpec>key</FormalSpec>
+<Private>1</Private>
+<ReturnType>Excel.Border</ReturnType>
+<Implementation><![CDATA[
+	do:'..Borders.IsDefined(key) ..Borders.SetAt(##class(Excel.Border).%New(),key)
+	quit ..Borders.GetAt(key)
+]]></Implementation>
+</Method>
+
+<Method name="BorderLeftGet">
+<Implementation><![CDATA[	quit ..Border("Left")
+]]></Implementation>
+</Method>
+
+<Method name="BorderRightGet">
+<Implementation><![CDATA[	quit ..Border("Right")
+]]></Implementation>
+</Method>
+
+<Method name="BorderBottomGet">
+<Implementation><![CDATA[	quit ..Border("Bottom")
+]]></Implementation>
+</Method>
+
+<Method name="BorderTopGet">
+<Implementation><![CDATA[	quit ..Border("Top")
+]]></Implementation>
+</Method>
+
+<Method name="%OnNew">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set ..Alignment=##class(Excel.Alignment).%New()
+	set ..Font=##class(Excel.Font).%New()
+	set ..Interior=##class(Excel.Interior).%New()
+	set ..Protection=$char(0)
+	quit $system.Status.OK()
+]]></Implementation>
+</Method>
+</Class>
+</Export>

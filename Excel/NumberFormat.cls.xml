@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.NumberFormat">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62063,45324.516404</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="Format">
+<Description>
+data format
+dd/mm/yyyy
+#,##0.00
+Short Date </Description>
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="ss:Format"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+</Class>
+</Export>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.WorkSheet">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62062,55437.167593</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="Table">
+<Type>Excel.Table</Type>
+</Property>
+
+<Property name="WorksheetOptions">
+<Type>Excel.WorksheetOptions</Type>
+</Property>
+
+<Method name="Normalize">
+<FormalSpec>debug:%Boolean</FormalSpec>
+<Implementation><![CDATA[	do ..Table.Normalize(debug)
+]]></Implementation>
+</Method>
+
+<Method name="%OnNew">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set ..Table=##class(Excel.Table).%New()
+	set ..WorksheetOptions=##class(Excel.WorksheetOptions).%New()
+	quit $system.Status.OK()
+]]></Implementation>
+</Method>
+
+<Method name="Cell">
+<Description>
+Return the desired cell</Description>
+<FormalSpec>row:%Integer,col:%Integer</FormalSpec>
+<ReturnType>Excel.Cell</ReturnType>
+<Implementation><![CDATA[	quit ..Table.Cell(row,col)
+]]></Implementation>
+</Method>
+
+<Method name="Row">
+<Description>
+Return the necessary line</Description>
+<FormalSpec>row:%Integer</FormalSpec>
+<ReturnType>Excel.Row</ReturnType>
+<Implementation><![CDATA[	quit ..Table.Row(row)
+]]></Implementation>
+</Method>
+
+<Method name="Column">
+<Description>
+Return the column</Description>
+<FormalSpec>num:%Integer</FormalSpec>
+<ReturnType>Excel.Column</ReturnType>
+<Implementation><![CDATA[	quit ..Table.Column(num)
+]]></Implementation>
+</Method>
+</Class>
+</Export>

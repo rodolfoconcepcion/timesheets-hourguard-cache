@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.Border">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62063,42942.016697</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="LineStyle">
+<Description>
+line Style
+Continuous,DashDot,DashDotDot</Description>
+<Type>%String</Type>
+<Parameter name="VALUELIST" value=",Continuous,DashDot,DashDotDot"/>
+<Parameter name="XMLNAME" value="ss:LineStyle"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Color">
+<Description>
+Color line
+#808080,#FF0000</Description>
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="ss:Color"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Weight">
+<Description>
+The thickness of the line
+1,2,3</Description>
+<Type>%Integer</Type>
+<Parameter name="XMLNAME" value="ss:Weight"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+</Class>
+</Export>

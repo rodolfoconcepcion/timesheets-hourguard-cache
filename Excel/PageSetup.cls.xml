@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.PageSetup">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62063,67173.681259</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="Layout">
+<Type>Excel.Layout</Type>
+</Property>
+
+<Property name="PageMargins">
+<Type>Excel.PageMargins</Type>
+</Property>
+
+<Method name="%OnNew">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set ..Layout=##class(Excel.Layout).%New()
+	set ..PageMargins=##class(Excel.PageMargins).%New()
+	quit 1
+]]></Implementation>
+</Method>
+</Class>
+</Export>

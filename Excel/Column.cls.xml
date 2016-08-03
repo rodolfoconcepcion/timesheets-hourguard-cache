@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.Column">
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62063,48654.21952</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="Width">
+<Description>
+Width column</Description>
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="ss:Width"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="AutoFitWidth">
+<Description>
+Autogrowth</Description>
+<Type>%String</Type>
+<Parameter name="XMLNAME" value="ss:AutoFitWidth"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+</Class>
+</Export>

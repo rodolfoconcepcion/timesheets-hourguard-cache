@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<CSP name="hg/outputFile.csp" application="/csp/samples/"><![CDATA[
+<script language="CACHE" method="OnPreHTTP" returntype="%Boolean">
+	set shortFileName = %request.Get("shortFileName")
+	set longFileName = %request.Get("longFileName")
+	set %response.ContentType = "application/vnd.ms-excel"
+	do %response.SetHeader("content-disposition","filename="_shortFileName)
+	do %response.SetHeader("CACHE-CONTROL","max-age=0")
+	quit $$$OK
+</script><server>
+	set file = ##class(%FileCharacterStream).%New()
+	do file.LinkToFile(longFileName)
+	do file.OutputToDevice()
+	set ^CacheTemp("debug","outputFile.csp")=$listbuild(shortFileName,longFileName,file)
+</server>]]></CSP>
+</Export>

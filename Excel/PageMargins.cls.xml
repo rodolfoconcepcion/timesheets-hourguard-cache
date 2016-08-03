@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Excel.PageMargins">
+<Description>
+Indented printing</Description>
+<Super>%RegisteredObject,%XML.Adaptor</Super>
+<TimeCreated>62063,67333.139058</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Property name="Bottom">
+<Type>%Integer</Type>
+<Parameter name="XMLNAME" value="x:Bottom"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Left">
+<Type>%Integer</Type>
+<Parameter name="XMLNAME" value="x:Left"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Right">
+<Type>%Integer</Type>
+<Parameter name="XMLNAME" value="x:Right"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+
+<Property name="Top">
+<Type>%Integer</Type>
+<Parameter name="XMLNAME" value="x:Top"/>
+<Parameter name="XMLPROJECTION" value="ATTRIBUTE"/>
+</Property>
+</Class>
+</Export>

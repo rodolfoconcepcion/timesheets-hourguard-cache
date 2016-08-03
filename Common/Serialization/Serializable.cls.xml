@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Common.Serialization.Serializable">
+<Description><![CDATA[
+<pre>
+TD AMERITRADE CONFIDENTIAL CONTROLLED.  DO NOT COPY OR DISTRIBUTE FURTHER.  
+© 2012 Think Tech, Inc.  All rights reserved.  
+
+01-10-2012   james.register          Created
+
+This class contains functionality to serialize an object. The format
+implemented is a series of nested $list constructs. Classes can implement this
+serialization behavior by inheriting from this class.
+
+Supports the following property types:
+
+ - Datatype
+ - Multi-dimensional (datatype, object, and mixed contents)
+ - Other objects that inherit from Common.Serialization.ISerializable
+ - Objects that inherit from %SerialObject
+
+Other object properties are saved with the object and will be instantiated during 
+the deserialization, but their properties will not be populated.
+
+Limitations:
+
+ - Classes that inherit from this class must be able to be instantiated from a default 
+  (blank) constructor.
+ - The serialized data format is not backwards compatable.
+ - The serialized data format is not forwards compatable if new required properties are added.
+ - The serialized data format is not self-identifying at the top level. It is necessary
+   to know what type of object it is to deserialize it.
+ - Circular references are not supported. Objects that contain circular references
+   should not extend this class.
+
+This class relies heavily on Common.Serialization.ElementListBuilder and
+Common.Serialization.ElementListDeserializer to perform the serialization/deserialization. 
+</pre>]]></Description>
+<Abstract>1</Abstract>
+<IncludeGenerator>%occCommon</IncludeGenerator>
+<Super>Common.Serialization.ISerializable</Super>
+<TimeCreated>62699,62885.987346</TimeCreated>
+
+<Method name="Serialize">
+<Description>
+Returns the serialized data format of the object. </Description>
+<CodeMode>objectgenerator</CodeMode>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	d %code.WriteLine(" s listBuilder = ##class(Common.Serialization.ElementListBuilder).%New()")
+	f i=1:1:%compiledclass.Properties.Count() {
+		if %compiledclass.Properties.GetAt(i).Transient continue 
+		s propertyName = %compiledclass.Properties.GetAt(i).Name
+		s type = %compiledclass.Properties.GetAt(i).Type
+		s typeclass = ##class(%Dictionary.CompiledClass).%OpenId(type)
+		if (typeclass = $$$NULLOREF) {
+			s $ze = "Unable to open dependent class """_type_""" for property "_propertyName_". A CompileAfter directive may be necessary."
+			ztrap $ze
+		}
+		if (%compiledclass.Properties.GetAt(i).MultiDimensional) {
+			d %code.WriteLine(" if $d(.."_propertyName_") m tempArray=.."_propertyName_" d listBuilder.AddArrayProperty("""_propertyName_""",.tempArray) k tempArray")
+		} elseif (typeclass.ClassType = "datatype") {
+			d %code.WriteLine(" d listBuilder.AddDataProperty("""_propertyName_""",.."_propertyName_")")
+		} else {
+			d %code.WriteLine(" d listBuilder.AddObjectProperty("""_propertyName_""",.."_propertyName_")")
+		}
+	}
+	d %code.WriteLine(" q listBuilder.GetSerialized()")
+	q $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="LoadSerializedData">
+<Description>
+Populates an object based on serialized data.</Description>
+<FormalSpec>pSerializedData:%String</FormalSpec>
+<Implementation><![CDATA[
+	s deserializer = ##class(Common.Serialization.ElementListDeserializer).%New()
+	f serializedPropertyIndex = 1:1:$ll(pSerializedData) {
+		s serializedProperty = $lg(pSerializedData,serializedPropertyIndex)
+		d deserializer.DeserializeProperty(serializedProperty,.propertyName,.propertyValue,.propertyType)
+		if (propertyType = 1) { // object reference
+			s $property(##this,propertyName)=propertyValue
+		} elseif (propertyType = 2) { // datatype
+			s $property(##this,propertyName)=propertyValue
+		} elseif (propertyType = 3) { // multidimensional
+			m @(".."_propertyName)=propertyValue
+		}
+	}
+	q
+]]></Implementation>
+</Method>
+
+<Method name="Deserialize">
+<Description>
+Returns a new object from a serialized string.</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pInput:%String</FormalSpec>
+<ReturnType>Common.Serialization.Serializable</ReturnType>
+<Implementation><![CDATA[
+	s newObject = ..%New()
+	d newObject.LoadSerializedData(pInput)
+	q newObject
+]]></Implementation>
+</Method>
+</Class>
+</Export>
