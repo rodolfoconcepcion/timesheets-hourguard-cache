@@ -50,7 +50,7 @@ Loads data from HourGuard's files</Description>
 		&sql(delete from hourguard.account)
 		&sql(delete from hourguard.task)
 		&sql(delete from hourguard.timesheet)
-		//&sql(delete from hourguard.weeklyTimesheet)
+		
 		$$$THROWONERROR(statusCode, ..uploadAccounts(.aAccounts, DEBUG))
 		$$$THROWONERROR(statusCode, ..uploadTasks(.aAccounts, DEBUG))
 		$$$THROWONERROR(statusCode, ..uploadTimesheets(DEBUG))
