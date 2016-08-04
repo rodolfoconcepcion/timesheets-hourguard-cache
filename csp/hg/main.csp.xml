@@ -7,7 +7,7 @@
 		try {
 			kill ^CacheTemp("debug")
 			set DEBUG = 0		// backend debug flag
-			set cspDEBUG = 1	// frontend debug flag
+			set cspDEBUG = 0	// frontend debug flag
 			if cspDEBUG set ^CacheTemp("debug") = 0
 
 			set errorMessage = ""
@@ -42,7 +42,8 @@
 					set errorMessage = ..EscapeHTML($system.Status.GetErrorText(sc))
 					set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"OnPreHTTP-5")=$listbuild("date="_date,"errorMessage="_errorMessage,"longFileName="_longFileName)
 					if errorMessage = "" {
-						set %response.ServerSideRedirect="outputFile.csp?shortFileName="_..EscapeURL(shortFileName)_"&longFileName="_..EscapeURL(longFileName)
+						set %response.ServerSideRedirect = "outputFile.csp?shortFileName="_..EscapeURL(shortFileName)_"&longFileName="_..EscapeURL(longFileName)
+						set %response.ServerSideRedirect = %response.ServerSideRedirect_"&DEBUG="_cspDEBUG
 					}
 				}
 			}

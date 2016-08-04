@@ -4,6 +4,7 @@
 <script language="CACHE" method="OnPreHTTP" returntype="%Boolean">
 	set shortFileName = %request.Get("shortFileName")
 	set longFileName = %request.Get("longFileName")
+	set DEBUG = %request.Get("DEBUG")
 	set %response.ContentType = "application/vnd.ms-excel"
 	do %response.SetHeader("content-disposition","filename="_shortFileName)
 	do %response.SetHeader("CACHE-CONTROL","max-age=0")
@@ -12,6 +13,6 @@
 	set file = ##class(%FileCharacterStream).%New()
 	do file.LinkToFile(longFileName)
 	do file.OutputToDevice()
-	set ^CacheTemp("debug","outputFile.csp")=$listbuild(shortFileName,longFileName,file)
+	set:DEBUG ^CacheTemp("debug","outputFile.csp") = $listbuild(shortFileName,longFileName,file)
 </server>]]></CSP>
 </Export>
