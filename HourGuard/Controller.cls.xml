@@ -40,29 +40,31 @@ Delimiter for output</Description>
 <Description>
 Loads data from HourGuard's files</Description>
 <ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[weekNumber:%Integer=0,date:%Date=+$horolog,DEBUG:%Boolean=1,&longFileName:%String="",&outputFile:HourGuard.Excel="",excelFormat:%String="csv"]]></FormalSpec>
+<FormalSpec><![CDATA[weekNumber:%Integer=0,date:%Date=+$horolog,DEBUG:%Boolean=1,&longFileName:%String="",&outputFile:HourGuard.Excel="",excelFormat:%String="csv",resetFlag:%Boolean=0]]></FormalSpec>
 <ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
-	set cspDEBUG = +$get(^CacheTemp("debug"))
-	set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"main-1")=$listbuild("weekNumber="_weekNumber,"date="_date,"DEBUG="_DEBUG,"longFileName="_longFileName,"excelFormat="_excelFormat)
+	do ..debug("main-1", "weekNumber,date,DEBUG,longFileName,excelFormat,resetFlag")
 	set sc = $System.Status.OK()
 	try {
-		&sql(delete from hourguard.account)
-		&sql(delete from hourguard.task)
-		&sql(delete from hourguard.timesheet)
+		if resetFlag {
+			&sql(delete from hourguard.account)
+			&sql(delete from hourguard.task)
+			&sql(delete from hourguard.timesheet)
+		}
+		$$$THROWONERROR(statusCode, ..uploadAccounts(.aAccounts, DEBUG, resetFlag))
+		$$$THROWONERROR(statusCode, ..uploadTasks(.aAccounts, DEBUG, resetFlag))
+		$$$THROWONERROR(statusCode, ..uploadTimesheets(DEBUG, resetFlag))
 		
-		$$$THROWONERROR(statusCode, ..uploadAccounts(.aAccounts, DEBUG))
-		$$$THROWONERROR(statusCode, ..uploadTasks(.aAccounts, DEBUG))
-		$$$THROWONERROR(statusCode, ..uploadTimesheets(DEBUG))
-		
-		set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"main-2")=$listbuild("date="_date,"excelFormat="_excelFormat)
-		$$$THROWONERROR(statusCode, ..generateTimeSheet(weekNumber, date, excelFormat, .longFileName, .outputFile, DEBUG))
-		set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"main-3")=$listbuild("longFileName="_longFileName,"outputFile="_outputFile)
+		do ..debug("main-2", "date,excelFormat")
+		$$$THROWONERROR(statusCode, ..generateTimeSheet(weekNumber, date, excelFormat, .longFileName, .outputFile, DEBUG, resetFlag))
+		do ..debug("main-3", "longFileName,outputFile")
+
 	} catch exception {
+		write:DEBUG !!,exception.DisplayString(),!
 		set sc = exception.AsStatus()
-		write:DEBUG !!,$system.Status.GetErrorText(sc),!
 	}
-	set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"main-4")=$listbuild("weekNumber="_weekNumber,"date="_date,"DEBUG="_DEBUG,"longFileName="_longFileName,"excelFormat="_excelFormat)
+
+	do ..debug("main-4", "weekNumber,date,DEBUG,longFileName,excelFormat,resetFlag")
 	quit sc
 ]]></Implementation>
 </Method>
@@ -71,12 +73,13 @@ Loads data from HourGuard's files</Description>
 <Description>
 uploads accounts</Description>
 <ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[&aAccounts:%Binary,DEBUG:%Boolean=0]]></FormalSpec>
+<FormalSpec><![CDATA[&aAccounts:%Binary,DEBUG:%Boolean=0,resetFlag:%Boolean=0]]></FormalSpec>
 <PublicList>HourlyRate</PublicList>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	try {
 		kill aAccounts
+		do ..debug("uploadAccounts-1", "DEBUG,resetFlag,HourlyRate")
 		write:DEBUG !,">>> Processing accounts..."
 		set rsFileSet=##class(%ResultSet).%New("%File:FileSet")
 		$$$THROWONERROR(statusCode, rsFileSet.Execute(..#PATH_"Accounts"))
@@ -115,14 +118,16 @@ uploads accounts</Description>
 				set:'objId objId=obj.%Id()
 			}
 			set aAccounts(Name)=objId
+			do ..debug("uploadAccounts-2", "action")
 			if DEBUG write " --> ",action
 			kill obj
 		}
 	} catch e {
-		write:DEBUG !,">>> ",e.DisplayString()
+		set errorMessage = e.DisplayString()
+		do ..debug("uploadAccounts-3", "errorMessage")
 		set sc=e.AsStatus()
 	}
-	write:DEBUG !,">>> ",counter," account(s) processed."
+	do ..debug("uploadAccounts-4", "counter")
 	quit sc
 ]]></Implementation>
 </Method>
@@ -131,7 +136,7 @@ uploads accounts</Description>
 <Description>
 uploads tasks</Description>
 <ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[&aAccounts:%Binary,DEBUG:%String=0]]></FormalSpec>
+<FormalSpec><![CDATA[&aAccounts:%Binary,DEBUG:%String=0,resetFlag:%Boolean=0]]></FormalSpec>
 <PublicList>ParentTask,Account,Name,FullName,Complete,Closed,UseAccountHourlyRate,HourlyRate,Notes</PublicList>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
@@ -200,7 +205,7 @@ exit3
 <Description>
 uploads timesheets</Description>
 <ClassMethod>1</ClassMethod>
-<FormalSpec>DEBUG:%String=0</FormalSpec>
+<FormalSpec>DEBUG:%String=0,resetFlag:%Boolean=0</FormalSpec>
 <PublicList>col1,col2,col3,col4,col5</PublicList>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
@@ -333,7 +338,7 @@ exit2
 
 <Method name="generateTimeSheet">
 <ClassMethod>1</ClassMethod>
-<FormalSpec><![CDATA[weekNumber:%Integer=0,date:%Date=$horolog,excelFormat:%String="csv",&longFileName:%String="",&shortFileName:HourGuard.Excel="",DEBUG:%Boolean=0]]></FormalSpec>
+<FormalSpec><![CDATA[weekNumber:%Integer=0,date:%Date=$horolog,excelFormat:%String="csv",&longFileName:%String="",&shortFileName:HourGuard.Excel="",DEBUG:%Boolean=0,resetFlag:%Boolean=0]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	try {
@@ -533,6 +538,22 @@ exit2
 		set statusCode=eException.AsStatus()
 	}
 	quit statusCode
+]]></Implementation>
+</Method>
+
+<Method name="debug">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>debugLabel:%String,variables:%String</FormalSpec>
+<ProcedureBlock>0</ProcedureBlock>
+<Implementation><![CDATA[
+ 	if $data(^CacheTempHG("debug")) {
+ 		set debugCount = $increment(^CacheTempHG("debug"))
+ 		for i=1:1:$length(variables,",") {
+ 			set variable = $piece(variables, ",", i)
+ 			set value = $g(@variable)
+ 			set $list(^CacheTempHG("debug", debugCount, debugLabel), i) = variable_"=["_value_"]"
+ 		}
+ 	}
 ]]></Implementation>
 </Method>
 </Class>

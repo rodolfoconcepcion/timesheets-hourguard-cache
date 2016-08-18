@@ -5,10 +5,12 @@
 <html>
 	<script language='cache' method='OnPreHTTP' returntype='%Boolean'>
 		try {
-			kill ^CacheTemp("debug")
-			set DEBUG = 0		// backend debug flag
-			set cspDEBUG = 0	// frontend debug flag
-			if cspDEBUG set ^CacheTemp("debug") = 0
+			kill ^CacheTempHG("debug")
+			set DEBUG = +$get(%request.Data("DEBUG",1))		// debug flag
+			set debugLink = "<a target='_blank' href='http://localhost:57773/csp/sys/exp/UtilExpGlobalView.csp?%24NAMESPACE=SAMPLES&IsDb=0&%24ID1=&ID2=%5ECacheTempHG&%24ID3=0&refreshpage=http%3A%2F%2Flocalhost%3A57773%2Fcsp%2Fsys%2Fexp%2F%2525CSP.UI.Portal.GlobalList.zen%3F%24NAMESPACE%3DSAMPLES%26%24NAMESPACE%3DSAMPLES&IsEdit=0&DocBookPage=%2Fcsp%2Fdocbook%2FDocBook.UI.Page.cls%3F%24NAMESPACE%3DSAMPLES%26&%24ID2=%5ECacheTempHG&History=%5ECacheTempHG&NodeCount=100&AtEnd=1&TotalCount=4&LastSub=%5ECacheTempHG%28%22debug%22%2C3%2C%22OnPreHTTP-3%22%29'>See Debug Log</a>"
+			if DEBUG {
+				set ^CacheTempHG("debug") = 0
+			}
 
 			set errorMessage = ""
 			set date = $get(%request.Data("dateTo",1), +$horolog)
@@ -16,34 +18,35 @@
 			set weekNumber = $get(%request.Data("weekNumber",1))
 			set dateFrom = $get(%request.Data("dateFrom",1))
 			set dateTo = $get(%request.Data("dateTo",1))
+			set resetFlag = +$get(%request.Data("resetFlag",1))
 			set yearNumber = $piece(dateFrom,"/",3)
-			set resetData = $get(%request.Data("resetData",1))
-			set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"OnPreHTTP-1")=$listbuild("date="_date,"excelFormat="_excelFormat,"weekNumber="_weekNumber,"dateFrom="_dateFrom,"dateTo="_dateTo,"yearNumber="_yearNumber,"resetData="_resetData)
+			do ..debug("OnPreHTTP-1", "DEBUG,date,excelFormat,weekNumber,dateFrom,dateTo,yearNumber,resetFlag")
 
 			// calculate week number and dates (from/to) based on the date value
 			if weekNumber = "" {
-				set sc = ##class(HourGuard.Controller).getWeekNumber(date,.weekNumber,,.dateFrom,.dateTo,1)
+				set externalDateFormat = 1
+				set sc = ##class(HourGuard.Controller).getWeekNumber(date,.weekNumber,,.dateFrom,.dateTo, externalDateFormat)
 				set errorMessage = $system.Status.GetErrorText(sc)
 				set yearNumber = $piece(dateFrom,"/",3)
-				set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"OnPreHTTP-2")=$listbuild("errorMessage="_errorMessage,"date="_date,"weekNumber="_weekNumber,"dateFrom="_dateFrom,"dateTo="_dateTo,"yearNumber="_yearNumber)
+				do ..debug("OnPreHTTP-2", "sc,errorMessage,weekNumber,dateFrom,dateTo,yearNumber")
 			}
 			if errorMessage '= "" {
 				set errorMessage = ..EscapeHTML(errorMessage)
 			} else {
 				set date = $zdateh(dateFrom)
-				set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"OnPreHTTP-3")=$listbuild("dateFrom="_dateFrom,"date="_date,"yearNumber="_yearNumber)
+				do ..debug("OnPreHTTP-3", "dateFrom,date,yearNumber")
 
 				if $data(%request.Data("btnGetTimesheet")) {
-					set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"OnPreHTTP-4")=$listbuild("date="_date,"DEBUG="_DEBUG,"excelFormat="_excelFormat)
+					do ..debug("OnPreHTTP-4", "date,DEBUG,excelFormat")
 
 					// upload timesheets from HourGuard and create a timesheet for the previous week of the date passed
-					set sc = ##class(HourGuard.Controller).main(weekNumber,date,DEBUG,.longFileName,.shortFileName,excelFormat)	// get timesheet file
+					set sc = ##class(HourGuard.Controller).main(weekNumber,date,DEBUG,.longFileName,.shortFileName,excelFormat, resetFlag)	// get timesheet file
 
 					set errorMessage = ..EscapeHTML($system.Status.GetErrorText(sc))
-					set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"OnPreHTTP-5")=$listbuild("date="_date,"errorMessage="_errorMessage,"longFileName="_longFileName)
+					do ..debug("OnPreHTTP-5", "date,errorMessage,longFileName")
 					if errorMessage = "" {
 						set %response.ServerSideRedirect = "outputFile.csp?shortFileName="_..EscapeURL(shortFileName)_"&longFileName="_..EscapeURL(longFileName)
-						set %response.ServerSideRedirect = %response.ServerSideRedirect_"&DEBUG="_cspDEBUG
+						set %response.ServerSideRedirect = %response.ServerSideRedirect_"&DEBUG="_DEBUG
 					}
 				}
 			}
@@ -93,7 +96,7 @@
 							<option value='xls' #($select(excelFormat="xls":"selected",1:""))#>Excel (XLS)</option>
 							<option value='csv' #($select(excelFormat="csv":"selected",1:""))#>Comma Delimited (CSV)</option>
 						</select>
-						<input type="checkbox" id="resetData" value="resetData" checked> Reset Timesheets
+						<input type="checkbox" name="resetFlag" id="resetFlag" value="#($g(resetFlag))#" #($s($g(resetFlag):"checked",1:""))#> Reset Timesheets
 					</td>
 				</tr>
 				<tr>
@@ -101,7 +104,13 @@
 						<input type='reset' id='btnReset' name='btnReset' value='Reset'>
 						<input type='submit' id='btnGetTimesheet' name='btnGetTimesheet' value='Generate Timesheet' onclick="clear();">
 						<br />
-						<div id='errorMessage' style='color:red'>#(errorMessage)#</div>
+						<input type='checkbox' name='DEBUG' id='DEBUG' onclick='onDEBUG();' value='#(+$g(DEBUG))#' #($s($g(DEBUG):"checked",1:""))#> DEBUG
+						<div id='errorMessage' style='color:red'>
+							#(errorMessage)#
+						</div>
+						<div id='debugLink'>
+							#($select(DEBUG:debugLink,1:""))#
+						</div>
 					</td>
 				</tr>
 			</table>
@@ -115,7 +124,8 @@
 			var dateTo = document.getElementById('dateTo');
 			var btnGetTimesheet = document.getElementById('btnGetTimesheet');
 			var errorMessage = document.getElementById('errorMessage');
-			errorMessage.innerHTML = "#(errorMessage)#";
+			var debugLink = document.getElementById('debugLink');
+			errorMessage.innerHTML = '#(errorMessage)#';
 
 			function validateWeekNumber() {
 				var jsonText = #server(..getDates(weekNumber.value, yearNumber.value))#;
@@ -130,7 +140,7 @@
 			}
 			
 			function onSubmit() {
-				errorMessage.innerText = "";
+				errorMessage.innerText = '';
 				return true;
 			}
 			
@@ -138,24 +148,34 @@
 				obj.value = +obj.value + value;
 				validateWeekNumber();
 			}
+			
+			function onDEBUG(flag) {
+				if (flag == true) {
+					debugLink.innerHTML = "#(debugLink)#";
+				} else {
+					debugLink.innerHTML = "";
+				}
+			}
 		</script>
-		
-		<script language='cache' method='getDates' arguments='weekNumber:%Integer,yearNumber:%Integer' returnType='%String'>
-			set cspDEBUG = +$get(^CacheTemp("debug"))
-
-			set sc = ##class(HourGuard.Controller).getDates(weekNumber,yearNumber,.weekDayNumber,.dateFrom,.dateTo,1)
-			set errorMessage = $system.Status.GetErrorText(sc)
-			set:cspDEBUG ^CacheTemp("debug",$increment(^CacheTemp("debug")),"getDates")=$listbuild("errorMessage="_errorMessage,"weekNumber="_weekNumber,"yearNumber="_yearNumber,"dateFrom="_dateFrom,"dateTo="_dateTo)
-
-			set resultsArray = ##class(%ArrayOfDataTypes).%New()
-			do resultsArray.SetAt(..EscapeURL(errorMessage),"errorMessage")
-			do resultsArray.SetAt(dateFrom,"dateFrom")
-			do resultsArray.SetAt(dateTo,"dateTo")
-			do resultsArray.SetAt($zdateh(dateFrom),"date")
-			quit ##class(JSON.Util).Encode(resultsArray)
-		</script>
-		
 	</body>
 </html>
-]]></CSP>
+
+<script language='cache' method='getDates' arguments='weekNumber:%Integer,yearNumber:%Integer' returnType='%String'>
+	set DEBUG = $data(^CacheTempHG("debug"))
+
+	set sc = ##class(HourGuard.Controller).getDates(weekNumber,yearNumber,.weekDayNumber,.dateFrom,.dateTo,1)
+	set errorMessage = $system.Status.GetErrorText(sc)
+	do ..debug("getDates", "errorMessage,weekNumber,yearNumber,dateFrom,dateTo")
+
+	set resultsArray = ##class(%ArrayOfDataTypes).%New()
+	do resultsArray.SetAt(..EscapeURL(errorMessage),"errorMessage")
+	do resultsArray.SetAt(dateFrom,"dateFrom")
+	do resultsArray.SetAt(dateTo,"dateTo")
+	do resultsArray.SetAt($zdateh(dateFrom),"date")
+	quit ##class(JSON.Util).Encode(resultsArray)
+</script>
+
+<script language='cache' method='debug' arguments='debugLabel:%String, variables:%String'>
+	do ##class(HourGuard.Controller).debug(debugLabel, variables)
+</script>]]></CSP>
 </Export>
